@@ -1,0 +1,27 @@
+﻿
+decimalSeparator: ","
+
+offer: |
+    🍔 **{name}**
+    
+    💶 Precio: **{price}€**
+    ✅ Código: `{code}`
+    🚗 Código McAuto: `{mcAutoCode}`
+    
+    Válido hasta el {toDay} de {toMonthName} de {toYear}
+
+big: "{name} (grande)"
+
+months:
+ - enero
+ - febrero
+ - marzo
+ - abril
+ - mayo
+ - junio
+ - julio
+ - agosto
+ - septiembre
+ - octubre
+ - noviembre
+ - diciembre

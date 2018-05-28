@@ -22,6 +22,7 @@ pos = 0
 for offer in fetcher.fetch():
 	fileName = config['images']['folder'].format(file=str(pos))
 	imageBuilder.build(offer).save(fileName)
+	imageUrl = config['images']['url'].format(file=str(pos))
 
 	productName = offer.name
 	if offer.big:
@@ -44,9 +45,6 @@ for offer in fetcher.fetch():
 			toMonthName=strings['months'][offer.dateTo.month],
 			toYear=offer.dateTo.year
 	)
-	print(offerText)
+	bot.sendMessage(config['bot']['channel'], '[\u200B](%s)%s' % (imageUrl, offerText), ParseMode.MARKDOWN)
+
 	pos = pos + 1
-
-	#bot.sendMessage(-1001294091205, '[\u200B](https://xn--6o8h.cf/bitmap4.jpg)This is just a test', ParseMode.MARKDOWN)
-
-

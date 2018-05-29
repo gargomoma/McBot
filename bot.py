@@ -2,7 +2,8 @@
 
 import argparse
 import telegram.utils.request
-from database import Database, PublishedMessageV1
+import os
+from database import Database, PublishedMessage
 from mcdapi import ApiException, SimplifiedLoyaltyOfferFetcher
 from imagebuilder import ImageBuilder
 from ruamel import yaml
@@ -24,7 +25,7 @@ currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers
 offerDiff = database.diffOffers(currentOffers)
 
 for offer in offerDiff.new:
-	imageId = database.nextImageId()
+	imageId = os.urandom(16).hex()
 	fileName = config['images']['folder'].format(id=imageId)
 	imageBuilder.build(offer).save(fileName)
 	imageUrl = config['images']['url'].format(id=imageId)
@@ -53,8 +54,7 @@ for offer in offerDiff.new:
 	offerText = '[\u200B](%s)%s' % (imageUrl, offerText)
 
 	response = bot.sendMessage(config['bot']['channel'], offerText, ParseMode.MARKDOWN)
-	publishedMessage = PublishedMessageV1(config['bot']['channel'], response['message_id'])
+	publishedMessage = PublishedMessage(config['bot']['channel'], response['message_id'], imageId)
 	database.putPublishedOffer(offer, publishedMessage)
-	break
 
 database.save(config['database'])

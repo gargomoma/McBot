@@ -3,7 +3,7 @@ import pickle
 from collections import namedtuple
 
 OfferDiff = namedtuple('OfferDiff', ('new', 'deleted'))
-PublishedMessageV1 = namedtuple('PublishedMessageV1', ('chatId', 'messageId'))
+PublishedMessage = namedtuple('PublishedMessage', ('chatId', 'messageId', 'imageId'))
 
 class Database:
 	@staticmethod
@@ -11,33 +11,13 @@ class Database:
 		try:
 			with open(path, 'rb') as f:
 				db = pickle.load(f)
-				return db.upgrade()
+				return db
 		except FileNotFoundError:
-			return DatabaseV1()
+			return Database()
 
 	def __init__(self):
 		self.modified = False
-
-	def save(self, path):
-		if self.modified:
-			with open(path, 'wb') as f:
-				pickle.dump(self, f)
-			self.modified = False
-
-	def upgrade(self):
-		raise NotImplementedError()
-		
-class DatabaseV1(Database):
-	def __init__(self):
-		super().__init__()
-
-		self.imageId = 0
 		self.publishedOffers = dict()
-
-	def nextImageId(self):
-		self.imageId += 1
-		self.modified = True
-		return str(self.imageId)
 
 	def diffOffers(self, current):
 		new = current - self.publishedOffers.keys()
@@ -52,5 +32,8 @@ class DatabaseV1(Database):
 		del self.publishedOffers[offer]
 		self.modified = True
 
-	def upgrade(self):
-		return self
+	def save(self, path):
+		if self.modified:
+			with open(path, 'wb') as f:
+				pickle.dump(self, f)
+			self.modified = False

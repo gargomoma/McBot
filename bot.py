@@ -1,6 +1,7 @@
 
 import argparse
 import telegram.utils.request
+from database import Database, PublishedMessageV1
 from mcdapi import ApiException, SimplifiedLoyaltyOfferFetcher
 from imagebuilder import ImageBuilder
 from ruamel import yaml
@@ -15,14 +16,17 @@ with open(config['strings']) as f:
 	strings = yaml.safe_load(f)
 
 bot = Bot(token=config['bot']['token'], request=telegram.utils.request.Request(8))
-fetcher = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers'])
+database = Database.loadOrCreate(config['database'])
 imageBuilder = ImageBuilder()
 
-pos = 0
-for offer in fetcher.fetch():
-	fileName = config['images']['folder'].format(file=str(pos))
+currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers']).fetch()
+offerDiff = database.diffOffers(currentOffers)
+
+for offer in offerDiff.new:
+	imageId = database.nextImageId()
+	fileName = config['images']['folder'].format(id=imageId)
 	imageBuilder.build(offer).save(fileName)
-	imageUrl = config['images']['url'].format(file=str(pos))
+	imageUrl = config['images']['url'].format(id=imageId)
 
 	productName = offer.name
 	if offer.big:
@@ -45,6 +49,11 @@ for offer in fetcher.fetch():
 			toMonthName=strings['months'][offer.dateTo.month],
 			toYear=offer.dateTo.year
 	)
-	bot.sendMessage(config['bot']['channel'], '[\u200B](%s)%s' % (imageUrl, offerText), ParseMode.MARKDOWN)
+	offerText = '[\u200B](%s)%s' % (imageUrl, offerText)
 
-	pos = pos + 1
+	response = bot.sendMessage(config['bot']['channel'], offerText, ParseMode.MARKDOWN)
+	publishedMessage = PublishedMessageV1(config['bot']['channel'], response['message_id'])
+	database.putPublishedOffer(offer, publishedMessage)
+	break
+
+database.save(config['database'])

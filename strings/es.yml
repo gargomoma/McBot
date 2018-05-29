@@ -2,14 +2,11 @@
 decimalSeparator: ","
 
 offer: |
-    🍔 **{name}**
+    🍔 *{name}* por *{price}€*
+    ✅ Código: `{code}` (🚗 McAuto: `{mcAutoCode}`)
     
-    💶 Precio: **{price}€**
-    ✅ Código: `{code}`
-    🚗 Código McAuto: `{mcAutoCode}`
-    
-    Válido hasta el {toDay} de {toMonthName} de {toYear}
 
+offerExpired: "Código caducado"
 big: "{name} (grande)"
 
 months:

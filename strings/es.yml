@@ -5,7 +5,7 @@ offer: |
     🍔 *{name}*
     💶 Precio: *{price}€*
     ✅ Código: `{code}` (🚗 `{mcAutoCode}`)
-    📅 Caduca: hasta {toDay} de {toMonthName}
+    📅 Hasta el {toDay} de {toMonthName}
 
 offerExpired: "Código caducado"
 big: "{name} (grande)"

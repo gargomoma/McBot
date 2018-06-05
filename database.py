@@ -28,6 +28,9 @@ class Database:
 		self.publishedOffers[offer] = data
 		self.modified = True
 
+	def getOfferData(self, offer):
+		return self.publishedOffers[offer]
+
 	def deletePublishedOffer(self, offer):
 		del self.publishedOffers[offer]
 		self.modified = True

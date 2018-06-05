@@ -8,6 +8,7 @@ from mcdapi import ApiException, SimplifiedLoyaltyOfferFetcher
 from imagebuilder import ImageBuilder
 from ruamel import yaml
 from telegram import Bot, ParseMode
+import requests
 
 parser = argparse.ArgumentParser(description='Updates McDonalds offers')
 parser.add_argument('config', help='YAML configuration', type=argparse.FileType('r'))
@@ -56,5 +57,24 @@ for offer in offerDiff.new:
 	response = bot.sendMessage(config['bot']['channel'], offerText, ParseMode.MARKDOWN)
 	publishedMessage = PublishedMessage(config['bot']['channel'], response['message_id'], imageId)
 	database.putPublishedOffer(offer, publishedMessage)
+
+for offer in offerDiff.deleted:
+	message = database.getOfferData(offer)
+
+	data = {
+		'chat_id': message.chatId,
+		'message_id': message.messageId,
+		'text': strings['offerExpired'],
+		'parse_mode': 'Markdown'
+	}
+
+	response = requests.post('https://api.telegram.org/bot%s/editMessageText' % config['bot']['token'], data=data).json()
+	if response['ok'] or response['error_code'] == 400 and response['description'] == 'Bad Request: message is not modified':
+		try:
+			os.unlink(config['images']['folder'].format(id=message.imageId))
+		except:
+			pass
+
+		database.deletePublishedOffer(offer)
 
 database.save(config['database'])

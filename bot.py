@@ -69,7 +69,7 @@ for offer in offerDiff.deleted:
 	}
 
 	response = requests.post('https://api.telegram.org/bot%s/editMessageText' % config['bot']['token'], data=data).json()
-	if response['ok'] or response['error_code'] == 400 and response['description'] == 'Bad Request: message is not modified':
+	if response['ok'] or response['description'] in ('Bad Request: message is not modified', 'Bad Request: message to edit not found'):
 		try:
 			os.unlink(config['images']['folder'].format(id=message.imageId))
 		except:

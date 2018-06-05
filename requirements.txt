@@ -1,6 +1,3 @@
-# Bot library
-python-telegram-bot==10.1.0
-
 # Pillow for generating images
 Pillow==5.1.0
 

@@ -54,9 +54,16 @@ for offer in offerDiff.new:
 	)
 	offerText = '[\u200B](%s)%s' % (imageUrl, offerText)
 
-	response = bot.sendMessage(config['bot']['channel'], offerText, ParseMode.MARKDOWN)
-	publishedMessage = PublishedMessage(config['bot']['channel'], response['message_id'], imageId)
-	database.putPublishedOffer(offer, publishedMessage)
+	data = {
+		'chat_id': config['bot']['channel'],
+		'text': offerText,
+		'parse_mode': 'Markdown'
+	}
+
+	response = requests.post('https://api.telegram.org/bot%s/sendMessage' % config['bot']['token'], data=data).json()
+	if response['ok']:
+		publishedMessage = PublishedMessage(config['bot']['channel'], response['result']['message_id'], imageId)
+		database.putPublishedOffer(offer, publishedMessage)
 
 for offer in offerDiff.deleted:
 	message = database.getOfferData(offer)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import chevron
 import dateutil.tz
 import os
 import requests
@@ -9,6 +10,7 @@ from database import PublishedMessage
 from datetime import datetime
 from imagebuilder import ImageBuilder
 from mcdapi import ApiException
+from mcdapi import OfferType
 from mcdapi import SimplifiedLoyaltyOfferFetcher
 from mcdapi import SimplifiedCalendarOfferFetcher
 from ruamel import yaml
@@ -41,27 +43,29 @@ for offer in offerDiff.new:
 	imageBuilder.build(offer).save(fileName)
 	imageUrl = config['images']['url'].format(id=imageId)
 
-	productName = offer.name
-	if offer.big:
-		productName = strings['big'].format(name=productName)
-
 	price = '%.02f' % offer.price
 	price = price.replace('.', strings['decimalSeparator'])
 
-	offerText = strings['offer'].format(
-			name=productName,
-			code=offer.code,
-			mcAutoCode=offer.mcAutoCode,
-			price=price,
-			fromDay=offer.dateFrom.day,
-			fromMonth=offer.dateFrom.month,
-			fromMonthName=strings['months'][offer.dateFrom.month],
-			fromYear=offer.dateFrom.year,
-			toDay=offer.dateTo.day,
-			toMonth=offer.dateTo.month,
-			toMonthName=strings['months'][offer.dateTo.month],
-			toYear=offer.dateTo.year
-	)
+	offerText = chevron.render(strings['offer'], {
+			'name': offer.name,
+			'bronze': offer.type is OfferType.BRONZE,
+			'typeSilver': offer.type is OfferType.SILVER,
+			'typeGold': offer.type is OfferType.GOLD,
+			'typeLoyalty': offer.type in (OfferType.BRONZE, OfferType.SILVER, OfferType.GOLD),
+			'typeMcnific': offer.type is OfferType.MCNIFIC,
+			'big': offer.big,
+			'code': offer.code,
+			'mcAutoCode': offer.mcAutoCode,
+			'price': price,
+			'fromDay': offer.dateFrom.day,
+			'fromMonth': offer.dateFrom.month,
+			'fromMonthName': strings['months'][offer.dateFrom.month],
+			'fromYear': offer.dateFrom.year,
+			'toDay': offer.dateTo.day,
+			'toMonth': offer.dateTo.month,
+			'toMonthName': strings['months'][offer.dateTo.month],
+			'toYear': offer.dateTo.year,
+	})
 	offerText = '[\u200B](%s)%s' % (imageUrl, offerText)
 
 	data = {

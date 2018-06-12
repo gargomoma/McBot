@@ -2,13 +2,13 @@
 decimalSeparator: ","
 
 offer: |
-    🍔 *{name}*
-    💶 Precio: *{price}€*
-    ✅ Código: `{code}` (🚗 `{mcAutoCode}`)
-    📅 Hasta el {toDay} de {toMonthName}
+    🍔 *{{name}}*{{#big}} (grande){{/big}}
+    {{#typeMcnific}}*Oferta mes McNífico*
+    {{/typeMcnific}}💶 Precio: *{price}€*
+    ✅ Código: `{code}` (🚗 `{mcAutoCode}}`)
+    📅 Hasta el {{toDay}} de {{toMonthName}}
 
 offerExpired: "Código caducado"
-big: "{name} (grande)"
 
 months:
  - enero

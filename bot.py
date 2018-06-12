@@ -48,7 +48,7 @@ for offer in offerDiff.new:
 
 	offerText = chevron.render(strings['offer'], {
 			'name': offer.name,
-			'bronze': offer.type is OfferType.BRONZE,
+			'typeBronze': offer.type is OfferType.BRONZE,
 			'typeSilver': offer.type is OfferType.SILVER,
 			'typeGold': offer.type is OfferType.GOLD,
 			'typeLoyalty': offer.type in (OfferType.BRONZE, OfferType.SILVER, OfferType.GOLD),

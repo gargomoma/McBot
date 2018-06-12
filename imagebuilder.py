@@ -20,7 +20,24 @@ class ImageBuilder:
 
 		if img is None:
 			img = PIL.Image.open(requests.get(url, stream=True).raw)
-			img = img.resize((750, 510), PIL.Image.BICUBIC)
+			img = self._coverResize(img, (750, 510))
 			self.imageCache[url] = img
 
 		return img
+
+	def _coverResize(self, image, target, resample=PIL.Image.BICUBIC):
+		imageSize = image.size
+		imageRatio = imageSize[0] / imageSize[1]
+		targetRatio = target[0] / target[1]
+
+		# Image is taller than it should
+		if imageRatio < targetRatio:
+			croppedHeight = imageSize[0] / targetRatio
+			box = (0, imageSize[1] / 2 - croppedHeight / 2, imageSize[0], imageSize[1] / 2 + croppedHeight / 2)
+
+		# Image is wider than it should
+		else:
+			croppedWidth = imageSize[1] * targetRatio
+			box = (imageSize[0] / 2 - croppedWidth / 2, 0, imageSize[0] / 2 + croppedWidth / 2, imageSize[1])
+
+		return image.resize(target, resample=resample, box=box)

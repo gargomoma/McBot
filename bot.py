@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-import telegram.utils.request
 import os
 from database import Database, PublishedMessage
-from mcdapi import ApiException, SimplifiedLoyaltyOfferFetcher
+from mcdapi import ApiException, SimplifiedLoyaltyOfferFetcher, SimplifiedCalendarOfferFetcher
 from imagebuilder import ImageBuilder
 from ruamel import yaml
-from telegram import Bot, ParseMode
+from datetime import datetime
+import dateutil.tz
 import requests
 
 parser = argparse.ArgumentParser(description='Updates McDonalds offers')
@@ -18,11 +18,15 @@ config = yaml.safe_load(args.config)
 with open(config['strings']) as f:
 	strings = yaml.safe_load(f)
 
-bot = Bot(token=config['bot']['token'], request=telegram.utils.request.Request(8))
 database = Database.loadOrCreate(config['database'])
 imageBuilder = ImageBuilder()
 
 currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers']).fetch()
+currentOffers.update(SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers']).fetch())
+
+now = datetime.now(dateutil.tz.gettz(config['timezone'])).date()
+currentOffers = set(filter(lambda x: x.dateFrom <= now and x.dateTo >= now, currentOffers))
+
 offerDiff = database.diffOffers(currentOffers)
 
 for offer in offerDiff.new:

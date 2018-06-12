@@ -9,3 +9,6 @@ requests==2.18.4
 
 # YAML parsing for configurations
 ruamel.yaml==0.15.37
+
+# Filtering old/future offers
+python-dateutil==2.7.3

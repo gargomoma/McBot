@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
-from database import Database, PublishedMessage
-from mcdapi import ApiException, SimplifiedLoyaltyOfferFetcher, SimplifiedCalendarOfferFetcher
-from imagebuilder import ImageBuilder
-from ruamel import yaml
-from datetime import datetime
 import dateutil.tz
+import os
 import requests
+from database import Database
+from database import PublishedMessage
+from datetime import datetime
+from imagebuilder import ImageBuilder
+from mcdapi import ApiException
+from mcdapi import SimplifiedLoyaltyOfferFetcher
+from mcdapi import SimplifiedCalendarOfferFetcher
+from ruamel import yaml
 
 parser = argparse.ArgumentParser(description='Updates McDonalds offers')
 parser.add_argument('config', help='YAML configuration', type=argparse.FileType('r'))
@@ -21,10 +24,13 @@ with open(config['strings']) as f:
 database = Database.loadOrCreate(config['database'])
 imageBuilder = ImageBuilder()
 
-currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers']).fetch()
+defaultDeadline = datetime.strptime(config['time']['defaultDeadline'], '%H:%M:%S').time()
+print(defaultDeadline)
+
+currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers'], defaultDeadline).fetch()
 currentOffers.update(SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers']).fetch())
 
-now = datetime.now(dateutil.tz.gettz(config['timezone'])).date()
+now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo=None)
 currentOffers = set(filter(lambda x: x.dateFrom <= now and x.dateTo >= now, currentOffers))
 
 offerDiff = database.diffOffers(currentOffers)

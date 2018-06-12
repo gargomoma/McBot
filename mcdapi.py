@@ -2,8 +2,30 @@
 import requests
 from collections import namedtuple
 from datetime import datetime
+from datetime import timedelta
+from enum import Enum
 
-LoyaltyOffer = namedtuple('LoyaltyOffer', ('name', 'big', 'code', 'mcAutoCode', 'price', 'image', 'dateFrom', 'dateTo'))
+Offer = namedtuple('Offer', ('name', 'type', 'big', 'code', 'mcAutoCode', 'price', 'image', 'dateFrom', 'dateTo'))
+
+class OfferType(Enum):
+	BRONZE = 1
+	SILVER = 2
+	GOLD = 3
+	MCNIFIC = 4
+
+	@staticmethod
+	def fromInts(type, level=None):
+		if type == 1:
+			if level == 1:
+				return OfferType.BRONZE
+			if level == 2:
+				return OfferType.SILVER
+			if level == 3:
+				return OfferType.GOLD
+		elif type == 7:
+			return OfferType.MCNIFIC
+
+		raise ValueError()
 
 class ApiException(Exception):
 	pass
@@ -57,47 +79,73 @@ class Fetcher:
 		raise NotImplementedError()
 
 class SimplifiedOfferFetcher(Fetcher):
-	def _processOffer(self, processed, offer):
-		processed.add(LoyaltyOffer(
+
+	def _processOffer(self, processed, offer, dateFrom, dateTo):
+		try:
+			type = OfferType.fromInts(offer['offerType'], offer.get('offerLevel'))
+		except ValueError:
+			return
+
+		processed.add(Offer(
 				name=offer['name'].strip(),
+				type=type,
 				big=False,
 				code=offer['qrCode'],
 				mcAutoCode=offer['checkoutCode'],
 				price=float(offer['price']),
 				image=offer['imageDetail'],
-				dateFrom=self._parseDate(offer['dateFrom']),
-				dateTo=self._parseDate(offer['dateTo'])
+				dateFrom=dateFrom,
+				dateTo=dateTo
 		))
 
 		if 'bigQrCode' in offer:
-			processed.add(LoyaltyOffer(
+			processed.add(Offer(
 					name=offer['name'].strip(),
+					type=type,
 					big=True,
 					code=offer['bigQrCode'],
 					mcAutoCode=offer['bigCheckoutCode'],
 					price=float(offer['bigPrice']),
 					image=offer['imageDetail'],
-					dateFrom=self._parseDate(offer['dateFrom']),
-					dateTo=self._parseDate(offer['dateTo'])
+					dateFrom=dateFrom,
+					dateTo=dateTo
 			))
 
-	def _parseDate(self, date):
-		return datetime.strptime(date, '%d/%m/%Y').date()
-
 class SimplifiedLoyaltyOfferFetcher(SimplifiedOfferFetcher):
+	SECOND_TD = timedelta(seconds=1)
+
+	def __init__(self, endpoint, deadlineTime):
+		super().__init__(endpoint)
+		self.deadlineTime = deadlineTime
+
 	def _processResponse(self, response):
 		processed = set()
 
 		for offer in response['offers']:
-			self._processOffer(processed, offer)
+			dateFrom = self._parseDate(offer['dateFrom'])
+			dateTo = self._parseDate(offer['dateTo'], True)
+			self._processOffer(processed, offer, dateFrom, dateTo)
 
 		return processed
+
+	def _parseDate(self, date, isEnd=False):
+		date = datetime.strptime(date, '%d/%m/%Y').date()
+		time = datetime.combine(date, self.deadlineTime)
+		if isEnd:
+			time = time - SimplifiedLoyaltyOfferFetcher.SECOND_TD
+		return time
 
 class SimplifiedCalendarOfferFetcher(SimplifiedOfferFetcher):
 	def _processResponse(self, response):
 		processed = set()
 
 		for promotion in response['offersPromotion']:
-			self._processOffer(processed, promotion['offer'])
+			dateFrom = self._parseTimestamp(promotion['dateFromOffer'])
+			dateTo = self._parseTimestamp(promotion['dateToOffer'])
+
+			self._processOffer(processed, promotion['offer'], dateFrom, dateTo)
 
 		return processed
+
+	def _parseTimestamp(self, time):
+		return datetime.strptime(time, '%Y-%m-%d %H:%M:%S')

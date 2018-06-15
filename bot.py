@@ -59,11 +59,11 @@ for offer in offerDiff.new:
 			'price': price,
 			'fromDay': offer.dateFrom.day,
 			'fromMonth': offer.dateFrom.month,
-			'fromMonthName': strings['months'][offer.dateFrom.month],
+			'fromMonthName': strings['months'][offer.dateFrom.month - 1],
 			'fromYear': offer.dateFrom.year,
 			'toDay': offer.dateTo.day,
 			'toMonth': offer.dateTo.month,
-			'toMonthName': strings['months'][offer.dateTo.month],
+			'toMonthName': strings['months'][offer.dateTo.month - 1],
 			'toYear': offer.dateTo.year,
 	})
 	offerText = '[\u200B](%s)%s' % (imageUrl, offerText)

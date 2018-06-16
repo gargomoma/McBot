@@ -12,16 +12,19 @@ class OfferType(Enum):
 	SILVER = 2
 	GOLD = 3
 	MCNIFIC = 4
+	BLACK = 5
 
 	@staticmethod
 	def fromInts(type, level=None):
 		if type == 1:
-			if level == 1:
+			if level == 0:
 				return OfferType.BRONZE
-			if level == 2:
+			if level == 1:
 				return OfferType.SILVER
-			if level == 3:
+			if level == 2:
 				return OfferType.GOLD
+			if level == 3:
+				return OfferType.BLACK
 		elif type == 7:
 			return OfferType.MCNIFIC
 

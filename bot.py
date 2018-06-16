@@ -53,6 +53,7 @@ for offer in offerDiff.new:
 			'typeGold': offer.type is OfferType.GOLD,
 			'typeLoyalty': offer.type in (OfferType.BRONZE, OfferType.SILVER, OfferType.GOLD),
 			'typeMcnific': offer.type is OfferType.MCNIFIC,
+			'typeBlack': offer.type is OfferType.BLACK,
 			'big': offer.big,
 			'code': offer.code,
 			'mcAutoCode': offer.mcAutoCode,

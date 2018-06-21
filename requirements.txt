@@ -1,14 +1,17 @@
+# Message templates
+chevron==0.12.*
+
 # Pillow for generating images
-Pillow==5.1.0
+Pillow==5.1.*
 
 # QR code generation
-qrcode==6.0
+qrcode==6.*
 
 # Fetching remote resources
-requests==2.18.4
+requests==2.18.*
 
 # YAML parsing for configurations
-ruamel.yaml==0.15.37
+ruamel.yaml==0.15.*
 
 # Filtering old/future offers
-python-dateutil==2.7.3
+python-dateutil==2.7.*

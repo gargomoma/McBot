@@ -13,6 +13,7 @@ from mcdapi import ApiException
 from mcdapi import OfferType
 from mcdapi import SimplifiedLoyaltyOfferFetcher
 from mcdapi import SimplifiedCalendarOfferFetcher
+from orderedset import OrderedSet
 from ruamel import yaml
 
 parser = argparse.ArgumentParser(description='Updates McDonalds offers')
@@ -33,7 +34,7 @@ currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers
 currentOffers.update(SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers']).fetch())
 
 now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo=None)
-currentOffers = set(filter(lambda x: x.dateFrom <= now and x.dateTo >= now, currentOffers))
+currentOffers = OrderedSet(filter(lambda x: x.dateFrom <= now and x.dateTo >= now, currentOffers))
 
 offerDiff = database.diffOffers(currentOffers)
 

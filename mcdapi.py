@@ -4,6 +4,7 @@ from collections import namedtuple
 from datetime import datetime
 from datetime import timedelta
 from enum import Enum
+from orderedset import OrderedSet
 
 Offer = namedtuple('Offer', ('name', 'type', 'big', 'code', 'mcAutoCode', 'price', 'image', 'dateFrom', 'dateTo'))
 
@@ -122,7 +123,7 @@ class SimplifiedLoyaltyOfferFetcher(SimplifiedOfferFetcher):
 		self.deadlineTime = deadlineTime
 
 	def _processResponse(self, response):
-		processed = set()
+		processed = OrderedSet()
 
 		for offer in response['offers']:
 			dateFrom = self._parseDate(offer['dateFrom'])
@@ -140,7 +141,7 @@ class SimplifiedLoyaltyOfferFetcher(SimplifiedOfferFetcher):
 
 class SimplifiedCalendarOfferFetcher(SimplifiedOfferFetcher):
 	def _processResponse(self, response):
-		processed = set()
+		processed = OrderedSet()
 
 		for promotion in response['offersPromotion']:
 			dateFrom = self._parseTimestamp(promotion['dateFromOffer'])

@@ -116,11 +116,10 @@ class SimplifiedOfferFetcher(Fetcher):
 			))
 
 class SimplifiedLoyaltyOfferFetcher(SimplifiedOfferFetcher):
-	SECOND_TD = timedelta(seconds=1)
+	END_OF_DAY = timedelta(days=1, seconds=-1)
 
-	def __init__(self, endpoint, deadlineTime):
+	def __init__(self, endpoint):
 		super().__init__(endpoint)
-		self.deadlineTime = deadlineTime
 
 	def _processResponse(self, response):
 		processed = OrderedSet()
@@ -133,11 +132,10 @@ class SimplifiedLoyaltyOfferFetcher(SimplifiedOfferFetcher):
 		return processed
 
 	def _parseDate(self, date, isEnd=False):
-		date = datetime.strptime(date, '%d/%m/%Y').date()
-		time = datetime.combine(date, self.deadlineTime)
+		date = datetime.strptime(date, '%d/%m/%Y')
 		if isEnd:
-			time = time - SimplifiedLoyaltyOfferFetcher.SECOND_TD
-		return time
+			date = date + SimplifiedLoyaltyOfferFetcher.END_OF_DAY
+		return date
 
 class SimplifiedCalendarOfferFetcher(SimplifiedOfferFetcher):
 	def _processResponse(self, response):

@@ -27,14 +27,13 @@ with open(config['strings']) as f:
 database = Database.loadOrCreate(config['database'])
 imageBuilder = ImageBuilder()
 
-defaultDeadline = datetime.strptime(config['time']['defaultDeadline'], '%H:%M:%S').time()
-print(defaultDeadline)
-
-currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers'], defaultDeadline).fetch()
-currentOffers.update(SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers']).fetch())
+calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers']).fetch()
 
 now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo=None)
-currentOffers = OrderedSet(filter(lambda x: x.dateFrom <= now and x.dateTo >= now, currentOffers))
+calendarOffers = filter(lambda x: x.dateFrom <= now and x.dateTo >= now, calendarOffers)
+
+currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers']).fetch()
+currentOffers.update(calendarOffers)
 
 offerDiff = database.diffOffers(currentOffers)
 

@@ -36,6 +36,7 @@ currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers
 currentOffers.update(calendarOffers)
 
 offerDiff = database.diffOffers(currentOffers)
+isFirstMessage = True
 
 for offer in offerDiff.new:
 	imageId = os.urandom(16).hex()
@@ -72,13 +73,16 @@ for offer in offerDiff.new:
 	data = {
 		'chat_id': config['bot']['channel'],
 		'text': offerText,
-		'parse_mode': 'Markdown'
+		'parse_mode': 'Markdown',
+		'disable_notification': not isFirstMessage
 	}
 
-	response = requests.post('https://api.telegram.org/bot%s/sendMessage' % config['bot']['token'], data=data).json()
+	response = requests.post('https://api.telegram.org/bot%s/sendMessage' % config['bot']['token'], json=data).json()
 	if response['ok']:
 		publishedMessage = PublishedMessage(config['bot']['channel'], response['result']['message_id'], imageId)
 		database.putPublishedOffer(offer, publishedMessage)
+
+	isFirstMessage = False
 
 for offer in offerDiff.deleted:
 	message = database.getOfferData(offer)
@@ -90,7 +94,7 @@ for offer in offerDiff.deleted:
 		'parse_mode': 'Markdown'
 	}
 
-	response = requests.post('https://api.telegram.org/bot%s/editMessageText' % config['bot']['token'], data=data).json()
+	response = requests.post('https://api.telegram.org/bot%s/editMessageText' % config['bot']['token'], json=data).json()
 	if response['ok'] or response['description'] in ('Bad Request: message is not modified', 'Bad Request: message to edit not found'):
 		try:
 			os.unlink(config['images']['folder'].format(id=message.imageId))

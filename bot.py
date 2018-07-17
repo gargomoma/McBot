@@ -10,6 +10,7 @@ from database import PublishedMessage
 from datetime import datetime
 from imagebuilder import ImageBuilder
 from mcdapi import ApiException
+from mcdapi import ApiErrorException
 from mcdapi import OfferType
 from mcdapi import SimplifiedLoyaltyOfferFetcher
 from mcdapi import SimplifiedCalendarOfferFetcher
@@ -27,13 +28,18 @@ with open(config['strings']) as f:
 database = Database.loadOrCreate(config['database'])
 imageBuilder = ImageBuilder()
 
-calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers']).fetch()
-
-now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo=None)
-calendarOffers = filter(lambda x: x.dateFrom <= now and x.dateTo >= now, calendarOffers)
-
 currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers']).fetch()
-currentOffers.update(calendarOffers)
+
+try:
+	calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers']).fetch()
+
+	now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo=None)
+	calendarOffers = filter(lambda x: x.dateFrom <= now and x.dateTo >= now, calendarOffers)
+
+	currentOffers.update(calendarOffers)
+except ApiErrorException as e:
+	if e.errorMessage != "KO (message was: Daily offer not found)":
+		raise e
 
 offerDiff = database.diffOffers(currentOffers)
 isFirstMessage = True

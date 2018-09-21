@@ -5,6 +5,7 @@ import chevron
 import dateutil.tz
 import os
 import requests
+import sys
 from database import Database
 from database import PublishedMessage
 from datetime import datetime
@@ -40,6 +41,9 @@ try:
 except ApiErrorException as e:
 	if e.errorMessage != "KO (message was: Daily offer not found)":
 		raise e
+
+if len(currentOffers) < config['minOfferCount']:
+	sys.exit(0)
 
 offerDiff = database.diffOffers(currentOffers)
 isFirstMessage = True

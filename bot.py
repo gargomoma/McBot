@@ -42,6 +42,8 @@ except ApiErrorException as e:
 	if e.errorMessage != "KO (message was: Daily offer not found)":
 		raise e
 
+currentOffers = OrderedSet(filter(lambda x: 'prueba' not in x.name.lower(), currentOffers))
+
 if len(currentOffers) < config['minOfferCount']:
 	sys.exit(0)
 

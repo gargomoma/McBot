@@ -101,13 +101,23 @@ for offer in offerDiff.deleted:
 
 	data = {
 		'chat_id': message.chatId,
-		'message_id': message.messageId,
-		'text': strings['offerExpired'],
-		'parse_mode': 'Markdown'
+		'message_id': message.messageId
 	}
+	response = requests.post('https://api.telegram.org/bot%s/deleteMessage' % config['bot']['token'], json=data).json()
+	deleted = response['ok']
 
-	response = requests.post('https://api.telegram.org/bot%s/editMessageText' % config['bot']['token'], json=data).json()
-	if response['ok'] or response['description'] in ('Bad Request: message is not modified', 'Bad Request: message to edit not found'):
+	if not deleted:
+		data = {
+			'chat_id': message.chatId,
+			'message_id': message.messageId,
+			'text': strings['offerExpired'],
+			'parse_mode': 'Markdown'
+		}
+
+		response = requests.post('https://api.telegram.org/bot%s/editMessageText' % config['bot']['token'], json=data).json()
+		deleted = response['ok'] or response['description'] in ('Bad Request: message is not modified', 'Bad Request: message to edit not found')
+
+	if deleted:
 		try:
 			os.unlink(config['images']['folder'].format(id=message.imageId))
 		except:

@@ -3,33 +3,9 @@ import requests
 from collections import namedtuple
 from datetime import datetime
 from datetime import timedelta
-from enum import Enum
 from orderedset import OrderedSet
 
 Offer = namedtuple('Offer', ('id', 'name', 'type', 'level', 'big', 'code', 'mcAutoCode', 'price', 'image', 'dateFrom', 'dateTo'))
-
-class OfferType(Enum):
-	BRONZE = 1
-	SILVER = 2
-	GOLD = 3
-	MCNIFIC = 4
-	BLACK = 5
-
-	@staticmethod
-	def fromInts(type, level=None):
-		if type == 1:
-			if level == 0:
-				return OfferType.BRONZE
-			if level == 1:
-				return OfferType.SILVER
-			if level == 2:
-				return OfferType.GOLD
-			if level == 3:
-				return OfferType.BLACK
-		elif type == 7:
-			return OfferType.MCNIFIC
-
-		raise ValueError()
 
 class ApiException(Exception):
 	pass

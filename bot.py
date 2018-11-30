@@ -61,12 +61,12 @@ for offer in offerDiff.new:
 
 	offerText = chevron.render(strings['offer'], {
 			'name': offer.name,
-			'typeBronze': offer.type is OfferType.BRONZE,
-			'typeSilver': offer.type is OfferType.SILVER,
-			'typeGold': offer.type is OfferType.GOLD,
-			'typeLoyalty': offer.type in (OfferType.BRONZE, OfferType.SILVER, OfferType.GOLD),
-			'typeMcnific': offer.type is OfferType.MCNIFIC,
-			'typeBlack': offer.type is OfferType.BLACK,
+			'typeBronze': offer.type == 1 and offer.level == 0,
+			'typeSilver': offer.type == 1 and offer.level == 1,
+			'typeGold': offer.type == 1 and offer.level == 2,
+			'typeLoyalty': offer.type == 1 and offer.level in (0, 1, 2),
+			'typeMcnific': offer.type == 7,
+			'typeBlack': offer.type == 1 and offer.level == 3,
 			'big': offer.big,
 			'code': offer.code,
 			'mcAutoCode': offer.mcAutoCode,

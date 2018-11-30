@@ -6,7 +6,7 @@ from datetime import timedelta
 from enum import Enum
 from orderedset import OrderedSet
 
-Offer = namedtuple('Offer', ('name', 'type', 'big', 'code', 'mcAutoCode', 'price', 'image', 'dateFrom', 'dateTo'))
+Offer = namedtuple('Offer', ('id', 'name', 'type', 'level', 'big', 'code', 'mcAutoCode', 'price', 'image', 'dateFrom', 'dateTo'))
 
 class OfferType(Enum):
 	BRONZE = 1
@@ -91,8 +91,10 @@ class SimplifiedOfferFetcher(Fetcher):
 			return
 
 		processed.add(Offer(
+				id=offer['id'],
 				name=offer['name'].strip(),
-				type=type,
+				type=offer['offerType'],
+				level=offer.get('offerLevel'),
 				big=False,
 				code=offer['qrCode'],
 				mcAutoCode=offer['checkoutCode'],
@@ -104,8 +106,10 @@ class SimplifiedOfferFetcher(Fetcher):
 
 		if 'bigQrCode' in offer:
 			processed.add(Offer(
+					id=offer['id'],
 					name=offer['name'].strip(),
-					type=type,
+					type=offer['offerType'],
+					level=offer.get('offerLevel'),
 					big=True,
 					code=offer['bigQrCode'],
 					mcAutoCode=offer['bigCheckoutCode'],

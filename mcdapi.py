@@ -61,11 +61,6 @@ class Fetcher:
 class SimplifiedOfferFetcher(Fetcher):
 
 	def _processOffer(self, processed, offer, dateFrom, dateTo):
-		try:
-			type = OfferType.fromInts(offer['offerType'], offer.get('offerLevel'))
-		except ValueError:
-			return
-
 		processed.add(Offer(
 				id=offer['id'],
 				name=offer['name'].strip(),

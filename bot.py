@@ -3,16 +3,15 @@
 import argparse
 import chevron
 import dateutil.tz
+import json
 import os
 import requests
 import sys
 from database import Database
 from database import PublishedMessage
 from datetime import datetime
-from imagebuilder import ImageBuilder
 from mcdapi import ApiException
 from mcdapi import ApiErrorException
-from mcdapi import OfferType
 from mcdapi import SimplifiedLoyaltyOfferFetcher
 from mcdapi import SimplifiedCalendarOfferFetcher
 from orderedset import OrderedSet
@@ -27,7 +26,6 @@ with open(config['strings']) as f:
 	strings = yaml.safe_load(f)
 
 database = Database.loadOrCreate(config['database'])
-imageBuilder = ImageBuilder()
 
 currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers']).fetch()
 
@@ -50,12 +48,20 @@ if len(currentOffers) < config['minOfferCount']:
 offerDiff = database.diffOffers(currentOffers)
 isFirstMessage = True
 
-for offer in offerDiff.new:
-	imageId = os.urandom(16).hex()
-	fileName = config['images']['folder'].format(id=imageId)
-	imageBuilder.build(offer).save(fileName)
-	imageUrl = config['images']['url'].format(id=imageId)
+if len(offerDiff.new) > 0 or len(offerDiff.deleted) > 0:
+	offersByCode = dict()
+	for offer in currentOffers:
+		offersByCode[offer.code] = {
+				'id': offer.id,
+				'type': offer.type,
+				'name': offer.name,
+				'image': offer.image
+		}
 
+	with open(config['offerJson'], 'w') as f:
+		json.dump(offersByCode, f)
+
+for offer in offerDiff.new:
 	price = '%.02f' % offer.price
 	price = price.replace('.', strings['decimalSeparator'])
 
@@ -79,8 +85,9 @@ for offer in offerDiff.new:
 			'toMonth': offer.dateTo.month,
 			'toMonthName': strings['months'][offer.dateTo.month - 1],
 			'toYear': offer.dateTo.year,
+			'exchangeUrl': config['exchangeUrl'] % {'code': offer.code}
 	})
-	offerText = '[\u200B](%s)%s' % (imageUrl, offerText)
+	offerText = '[\u200B](%s)%s' % (offer.image, offerText)
 
 	data = {
 		'chat_id': config['bot']['channel'],
@@ -91,7 +98,7 @@ for offer in offerDiff.new:
 
 	response = requests.post('https://api.telegram.org/bot%s/sendMessage' % config['bot']['token'], json=data).json()
 	if response['ok']:
-		publishedMessage = PublishedMessage(config['bot']['channel'], response['result']['message_id'], imageId)
+		publishedMessage = PublishedMessage(config['bot']['channel'], response['result']['message_id'])
 		database.putPublishedOffer(offer, publishedMessage)
 
 	isFirstMessage = False
@@ -118,11 +125,6 @@ for offer in offerDiff.deleted:
 		deleted = response['ok'] or response['description'] in ('Bad Request: message is not modified', 'Bad Request: message to edit not found')
 
 	if deleted:
-		try:
-			os.unlink(config['images']['folder'].format(id=message.imageId))
-		except:
-			pass
-
 		database.deletePublishedOffer(offer)
 
 database.save(config['database'])

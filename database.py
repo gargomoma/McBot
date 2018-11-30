@@ -3,7 +3,7 @@ import pickle
 from collections import namedtuple
 
 OfferDiff = namedtuple('OfferDiff', ('new', 'deleted'))
-PublishedMessage = namedtuple('PublishedMessage', ('chatId', 'messageId', 'imageId'))
+PublishedMessage = namedtuple('PublishedMessage', ('chatId', 'messageId'))
 
 class Database:
 	@staticmethod

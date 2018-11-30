@@ -1,12 +1,6 @@
 # Message templates
 chevron==0.13.*
 
-# Pillow for generating images
-Pillow==5.3.*
-
-# QR code generation
-qrcode==6.*
-
 # Fetching remote resources
 requests==2.20.*
 

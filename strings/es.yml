@@ -5,7 +5,7 @@ offer: |
     {{#typeBronze}}🥉{{/typeBronze}}{{#typeSilver}}🥈{{/typeSilver}}{{#typeGold}}🥇{{/typeGold}}{{^typeLoyalty}}🍔{{/typeLoyalty}} *{{name}}*{{#big}} (grande){{/big}}
     {{#typeMcnific}}❗❗❗ *Oferta mes McNífico* ❗❗❗
     {{/typeMcnific}}💶 Precio: *{{price}}€*
-    ✅ [CANJEAR CÓDIGO]({{exchangeUrl}})
+    ✅ [CANJEAR CÓDIGO]({{exchangeUrl}}) (🚗 `{{mcAutoCode}}`)
     📅 Hasta el {{toDay}} de {{toMonthName}}
 
 offerExpired: "Código caducado"

@@ -16,6 +16,7 @@ from mcdapi import SimplifiedLoyaltyOfferFetcher
 from mcdapi import SimplifiedCalendarOfferFetcher
 from orderedset import OrderedSet
 from ruamel import yaml
+from util import random_string
 
 parser = argparse.ArgumentParser(description='Updates McDonalds offers')
 parser.add_argument('config', help='YAML configuration', type=argparse.FileType('r'))
@@ -45,69 +46,96 @@ currentOffers = OrderedSet(filter(lambda x: 'prueba' not in x.name.lower(), curr
 if len(currentOffers) < config['minOfferCount']:
 	sys.exit(0)
 
-offerDiff = database.diffOffers(currentOffers)
-isFirstMessage = True
+offersByCode = dict()
+for offer in currentOffers:
+	publishedMessage = database.getOrCreateOffer(offer)
+	authKey = random_string(8)
+	publishedMessage.addAuthKey(authKey)
 
-if len(offerDiff.new) > 0 or len(offerDiff.deleted) > 0:
-	offersByCode = dict()
-	for offer in currentOffers:
-		offersByCode[offer.code] = {
-				'id': offer.id,
-				'type': offer.type,
-				'name': offer.name,
-				'image': offer.image
-		}
-
-	with open(config['offerJson'], 'w') as f:
-		json.dump(offersByCode, f)
-
-for offer in offerDiff.new:
-	price = '%.02f' % offer.price
-	price = price.replace('.', strings['decimalSeparator'])
-
-	offerText = chevron.render(strings['offer'], {
-			'name': offer.name,
-			'typeBronze': offer.type == 1 and offer.level == 0,
-			'typeSilver': offer.type == 1 and offer.level == 1,
-			'typeGold': offer.type == 1 and offer.level == 2,
-			'typeLoyalty': offer.type == 1 and offer.level in (0, 1, 2),
-			'typeMcnific': offer.type == 7,
-			'typeBlack': offer.type == 1 and offer.level == 3,
-			'big': offer.big,
-			'code': offer.code,
-			'mcAutoCode': offer.mcAutoCode,
-			'price': price,
-			'fromDay': offer.dateFrom.day,
-			'fromMonth': offer.dateFrom.month,
-			'fromMonthName': strings['months'][offer.dateFrom.month - 1],
-			'fromYear': offer.dateFrom.year,
-			'toDay': offer.dateTo.day,
-			'toMonth': offer.dateTo.month,
-			'toMonthName': strings['months'][offer.dateTo.month - 1],
-			'toYear': offer.dateTo.year,
-			'exchangeUrl': config['exchangeUrl'] % {'code': offer.code}
-	})
-	offerText = '[\u200B](%s)%s' % (offer.image, offerText)
-
-	data = {
-		'chat_id': config['bot']['channel'],
-		'text': offerText,
-		'parse_mode': 'Markdown',
-		'disable_notification': not isFirstMessage
+	offersByCode[offer.code] = {
+		'id': offer.id,
+		'type': offer.type,
+		'name': offer.name,
+		'image': offer.image,
+		'authKeys': publishedMessage.authKeys
 	}
 
-	response = requests.post('https://api.telegram.org/bot%s/sendMessage' % config['bot']['token'], json=data).json()
-	if response['ok']:
-		publishedMessage = PublishedMessage(config['bot']['channel'], response['result']['message_id'])
-		database.putPublishedOffer(offer, publishedMessage)
+with open(config['offerJson'], 'w') as f:
+	json.dump(offersByCode, f)
 
-	isFirstMessage = False
+isFirstMessage = True
+for offer in currentOffers:
+	publishedMessage = database.getOfferData(offer)
 
-for offer in offerDiff.deleted:
+	replyMarkup = {
+		'inline_keyboard': [
+			[
+				{
+					'text': strings['exchangeText'],
+					'url': config['exchangeUrl'] % {'code': offer.code, 'authKey': publishedMessage.getNewestAuthKey()}
+				}
+			]
+		]
+	}
+
+	if publishedMessage.messageId is None:
+		price = '%.02f' % offer.price
+		price = price.replace('.', strings['decimalSeparator'])
+
+		offerText = chevron.render(strings['offer'], {
+				'name': offer.name,
+				'typeBronze': offer.type == 1 and offer.level == 0,
+				'typeSilver': offer.type == 1 and offer.level == 1,
+				'typeGold': offer.type == 1 and offer.level == 2,
+				'typeLoyalty': offer.type == 1 and offer.level in (0, 1, 2),
+				'typeMcnific': offer.type == 7,
+				'typeBlack': offer.type == 1 and offer.level == 3,
+				'big': offer.big,
+				'code': offer.code,
+				'mcAutoCode': offer.mcAutoCode,
+				'price': price,
+				'fromDay': offer.dateFrom.day,
+				'fromMonth': offer.dateFrom.month,
+				'fromMonthName': strings['months'][offer.dateFrom.month - 1],
+				'fromYear': offer.dateFrom.year,
+				'toDay': offer.dateTo.day,
+				'toMonth': offer.dateTo.month,
+				'toMonthName': strings['months'][offer.dateTo.month - 1],
+				'toYear': offer.dateTo.year
+		})
+		offerText = '[\u200B](%s)%s' % (offer.image, offerText)
+
+		data = {
+			'chat_id': config['bot']['channel'],
+			'text': offerText,
+			'parse_mode': 'Markdown',
+			'disable_notification': not isFirstMessage,
+			'reply_markup': replyMarkup
+		}
+
+		response = requests.post('https://api.telegram.org/bot%s/sendMessage' % config['bot']['token'], json=data).json()
+		if response['ok']:
+			publishedMessage.messageId = response['result']['message_id']
+		else:
+			publishedMessage.popAuthKey()
+
+		isFirstMessage = False
+	else:
+		data = {
+			'chat_id': config['bot']['channel'],
+			'message_id': publishedMessage.messageId,
+			'reply_markup': replyMarkup
+		}
+
+		response = requests.post('https://api.telegram.org/bot%s/editMessageReplyMarkup' % config['bot']['token'], json=data).json()
+		if not response['ok']:
+			publishedMessage.popAuthKey()
+
+for offer in list(database.publishedOffers.keys() - currentOffers):
 	message = database.getOfferData(offer)
 
 	data = {
-		'chat_id': message.chatId,
+		'chat_id': config['bot']['channel'],
 		'message_id': message.messageId
 	}
 	response = requests.post('https://api.telegram.org/bot%s/deleteMessage' % config['bot']['token'], json=data).json()

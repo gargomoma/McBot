@@ -1,6 +1,7 @@
 __pycache__
-config.yml
+/*.yml
 *.db
 *.swp
+*.pyc
 venv/
 images/

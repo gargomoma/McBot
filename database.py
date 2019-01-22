@@ -1,9 +1,28 @@
 
 import pickle
 from collections import namedtuple
+from util import random_string
 
 OfferDiff = namedtuple('OfferDiff', ('new', 'deleted'))
-PublishedMessage = namedtuple('PublishedMessage', ('chatId', 'messageId'))
+
+class PublishedMessage:
+	def __init__(self, messageId=None, authKeys=None):
+		self.messageId = messageId
+		self.authKeys = authKeys or list()
+
+	def addAuthKey(self, authKey=None):
+		if authKey is None:
+			authKey = random_string(8)
+		if len(self.authKeys) > 5:
+			self.authKeys.pop(0)
+		self.authKeys.append(authKey)
+
+	def getNewestAuthKey(self):
+		return self.authKeys[-1]
+
+	def popAuthKey(self):
+		if len(self.authKeys) > 0:
+			self.authKeys.pop()
 
 class Database:
 	@staticmethod
@@ -16,7 +35,6 @@ class Database:
 			return Database()
 
 	def __init__(self):
-		self.modified = False
 		self.publishedOffers = dict()
 
 	def diffOffers(self, current):
@@ -26,17 +44,20 @@ class Database:
 
 	def putPublishedOffer(self, offer, data):
 		self.publishedOffers[offer] = data
-		self.modified = True
 
 	def getOfferData(self, offer):
 		return self.publishedOffers[offer]
 
+	def getOrCreateOffer(self, offer):
+		data = self.publishedOffers.get(offer)
+		if data is None:
+			data = PublishedMessage()
+			self.publishedOffers[offer] = data
+		return data
+
 	def deletePublishedOffer(self, offer):
 		del self.publishedOffers[offer]
-		self.modified = True
 
 	def save(self, path):
-		if self.modified:
-			with open(path, 'wb') as f:
-				pickle.dump(self, f)
-			self.modified = False
+		with open(path, 'wb') as f:
+			pickle.dump(self, f)

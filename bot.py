@@ -2,11 +2,13 @@
 
 import argparse
 import chevron
+import csv
 import dateutil.tz
 import json
 import os
 import requests
 import sys
+import time
 from database import Database
 from database import PublishedMessage
 from datetime import datetime
@@ -143,7 +145,7 @@ for offer in list(database.publishedOffers.keys() - currentOffers):
 
 	if not deleted:
 		data = {
-			'chat_id': message.chatId,
+			'chat_id': config['bot']['channel'],
 			'message_id': message.messageId,
 			'text': strings['offerExpired'],
 			'parse_mode': 'Markdown'
@@ -156,3 +158,13 @@ for offer in list(database.publishedOffers.keys() - currentOffers):
 		database.deletePublishedOffer(offer)
 
 database.save(config['database'])
+
+if 'userCountFile' in config:
+	params = {
+		'chat_id': config['bot']['channel']
+	}
+	response = requests.get('https://api.telegram.org/bot%s/getChatMembersCount' % config['bot']['token'], params=params).json()
+	if response['ok']:
+		with open(config['userCountFile'], 'a+', newline='') as f:
+			writer = csv.writer(f)
+			writer.writerow([time.time(), response['result']])

@@ -1,0 +1,31 @@
+html, body {
+	height: 100%;
+}
+
+body {
+	display: grid;
+	grid-template-columns: 100%;
+	grid-template-rows: auto 1fr auto 3fr;
+	text-align: center;
+}
+
+.fullimage {
+	position: relative;
+}
+
+.fullimage > img {
+	position: absolute;
+	left: 0;
+	right: 0;
+	margin-left: auto;
+	margin-right: auto;
+	height: 100%;
+	max-width: 100%;
+}
+
+#offerqr {
+	image-rendering: pixelated;
+	image-rendering: -moz-crisp-edges;
+	image-rendering: crisp-edges;
+}
+

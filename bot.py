@@ -166,5 +166,6 @@ if 'userCountFile' in config:
 	response = requests.get('https://api.telegram.org/bot%s/getChatMembersCount' % config['bot']['token'], params=params).json()
 	if response['ok']:
 		with open(config['userCountFile'], 'a+', newline='') as f:
+			now = datetime.utcnow().isoformat() + 'Z'
 			writer = csv.writer(f)
-			writer.writerow([time.time(), response['result']])
+			writer.writerow([now, response['result']])

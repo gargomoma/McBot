@@ -54,12 +54,14 @@ for offer in currentOffers:
 	authKey = random_string(8)
 	publishedMessage.addAuthKey(authKey)
 
+	requiresAuth = offer.type == 1 and offer.level in (1, 2)
 	offersByCode[offer.code] = {
 		'id': offer.id,
 		'type': offer.type,
 		'name': offer.name,
 		'image': offer.image,
-		'authKeys': publishedMessage.authKeys
+		'authKeys': publishedMessage.authKeys,
+		'requiresAuth': requiresAuth
 	}
 
 with open(config['offerJson'], 'w') as f:

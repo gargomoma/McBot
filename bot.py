@@ -30,10 +30,10 @@ with open(config['strings']) as f:
 
 database = Database.loadOrCreate(config['database'])
 
-currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers']).fetch()
+currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers'], config.get('proxy')).fetch()
 
 try:
-	calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers']).fetch()
+	calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers'], config.get('proxy')).fetch()
 
 	now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo=None)
 	calendarOffers = filter(lambda x: x.dateFrom <= now and x.dateTo >= now, calendarOffers)

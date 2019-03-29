@@ -1,5 +1,6 @@
 
 import requests
+import secrets
 from collections import namedtuple
 from datetime import datetime
 from datetime import timedelta
@@ -26,21 +27,26 @@ class InvalidJsonResponse(ApiException):
 		self.json = json
 
 class Fetcher:
-	def __init__(self, endpoint):
+	def __init__(self, endpoint, proxy=None):
 		self.endpoint = endpoint
 		self.session = requests.Session()
 		self.session.headers.update({'accept': 'application/json'})
+		if proxy is not None:
+			self.session.proxies = {
+					'http': proxy,
+					'https': proxy
+			}
 
 	def fetch(self):
 		try:
-			response = self.session.get(self.endpoint)
+			response = self._run()
 		except Exception as e:
 			raise ApiException('Cannot fetch from endpoint') from e
 
 		try:
 			response = response.json()
 		except Exception as e:
-			raise ApiException('Unable to parse JSON') from e
+			raise ApiException('Unable to parse JSON: ' + response.text) from e
 
 		try:
 			if response['code'] != 100 or response['msg'] != 'OK':
@@ -59,6 +65,12 @@ class Fetcher:
 		raise NotImplementedError()
 
 class SimplifiedOfferFetcher(Fetcher):
+
+	def _run(self):
+		request = {
+			'deviceId': secrets.token_hex(16),
+		}
+		return self.session.post(self.endpoint, json=request)
 
 	def _processOffer(self, processed, offer, dateFrom, dateTo):
 		processed.add(Offer(
@@ -92,9 +104,6 @@ class SimplifiedOfferFetcher(Fetcher):
 
 class SimplifiedLoyaltyOfferFetcher(SimplifiedOfferFetcher):
 	END_OF_DAY = timedelta(days=1, seconds=-1)
-
-	def __init__(self, endpoint):
-		super().__init__(endpoint)
 
 	def _processResponse(self, response):
 		processed = OrderedSet()

@@ -3,6 +3,8 @@ error_reporting(~0); ini_set('display_errors', 1);
 require_once('guid.php');
 require_once('lang.php');
 require_once('ip2location/IP2Location.php');
+require_once('devinfo.php');
+require_once('curlclient.php');
 
 $error = null;
 
@@ -43,40 +45,39 @@ if (!$regionOk) {
 
 if ($offer && !$error) {
 	if (in_array($authKey, $offer['authKeys'])) {
-		$headers = array(
-			'Content-type: application/json',
-			'Accept: application/json'
-		);
+		$devinfo = devinfo_random();
 
-		$request = array(
-			'deviceId' => guidv4(),
-			'offerId' => strval($offer['id']),
-			'offerType' => $offer['type'],
-			'qrCode' => $offerCode,
-			'user' => ($offer['requiresAuth'] ? 'penaj@net-solution.info' : '')
-		);
-		$request = json_encode($request);
-
-		if ($offer['requiresAuth']) {
-			$ch = curl_init("https://mcdonaldsws.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty");
-		} else {
-			$ch = curl_init("https://mcdonaldsws.mo2o.com/es/v3/getUniqueCodeOffer");
-		}
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$ch = mcd_request('https://api3.mo2o.com/mobilemetrics/app/v2/', $devinfo);
 		$reply = curl_exec($ch);
-		if ($reply) {
-			$reply = json_decode($reply, true);
-			if ($reply['code'] == 100) {
-				$uniqueCode = $reply['response']['uniqueCode'];
+		if (strpos($reply, "OK")) {
+			$request = array(
+				'deviceId' => $devinfo["udid"],
+				'offerId' => strval($offer['id']),
+				'offerType' => $offer['type'],
+				'qrCode' => $offerCode,
+				'user' => ($offer['requiresAuth'] ? 'penaj@net-solution.info' : '')
+			);
+
+			if ($offer['requiresAuth']) {
+				$ch = mcd_request("https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty", $request);
 			} else {
-				$error = "Respuesta inválida: " . $reply['msg'];
+				$ch = mcd_request("https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOffer", $request);
 			}
+			$reply = curl_exec($ch);
+			if ($reply) {
+				$reply = json_decode($reply, true);
+				if ($reply['code'] == 100) {
+					$uniqueCode = $reply['response']['uniqueCode'];
+				} else {
+					$error = "Respuesta inválida: " . $reply['msg'];
+				}
+			} else {
+				$error = "Error de comunicación: " . curl_error($ch);
+			}
+			curl_close($ch);
 		} else {
-			$error = "Error de comunicación: " . curl_error($ch);
+			$error = "Error registrando dispositivo nuevo";
 		}
-		curl_close($ch);
 	} else {
 		$error = "Esta web es de uso exclusivo para miembros del grupo <a href=\"https://t.me/McDonaldsOro\">@McDonaldsOro</a>";
 	}

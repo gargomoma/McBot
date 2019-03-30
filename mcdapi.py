@@ -62,7 +62,7 @@ class Fetcher:
 			raise InvalidJsonResponse(response) from e
 
 	def _processResponse(self, response):
-		raise NotImplementedError()
+		return response
 
 class SimplifiedOfferFetcher(Fetcher):
 
@@ -135,3 +135,27 @@ class SimplifiedCalendarOfferFetcher(SimplifiedOfferFetcher):
 
 	def _parseTimestamp(self, time):
 		return datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
+
+class RegisterUserFetcher(Fetcher):
+	def __init__(self, endpoint, email, phone, name, password, proxy=None):
+		super().__init__(endpoint, proxy)
+
+		self.email = email
+		self.phone = phone
+		self.name = name
+		self.password = password
+
+	def _run(self):
+		request = {
+			"birthdate": None,
+			"email": self.email,
+			"mobilephone": self.phone,
+			"name": self.name,
+			"password": self.password,
+			"receiveEmail": False,
+			"restaurants": [],
+			"socialId": None,
+			"socialToken": None,
+			"socialType": None
+		}
+		return self.session.post(self.endpoint, json=request)

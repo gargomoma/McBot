@@ -8,9 +8,9 @@ require_once('curlclient.php');
 
 $error = null;
 
-$offers = json_decode(file_get_contents("codes.json"), true);
+$offerInfo = json_decode(file_get_contents("codes.json"), true);
 $offerCode = @$_GET['code'];
-$offer = @$offers[$offerCode];
+$offer = @$offerInfo['offers'][$offerCode];
 $authKey = @$_GET['authKey'];
 
 $regionOk = false;
@@ -45,24 +45,32 @@ if (!$regionOk) {
 
 if ($offer && !$error) {
 	if (in_array($authKey, $offer['authKeys'])) {
-		$devinfo = devinfo_random();
+		if ($offer['requiresAuth']) {
+			$user = $offerInfo['email'];
+			$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty";
+			$devinfo = $offerInfo['devInfo'];
+		} else {
+			$user = '';
+			$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOffer";
 
-		$ch = mcd_request('https://api3.mo2o.com/mobilemetrics/app/v2/', $devinfo);
-		$reply = curl_exec($ch);
-		if (strpos($reply, "OK")) {
+			$devinfo = devinfo_random();
+			$ch = mcd_request('https://api3.mo2o.com/mobilemetrics/app/v2/', $devinfo);
+			$reply = curl_exec($ch);
+			if (strpos($reply, "OK") === false) {
+				$error = "Error registrando dispositivo nuevo";
+			}
+		}
+
+		if (!$error) {
 			$request = array(
 				'deviceId' => $devinfo["udid"],
 				'offerId' => strval($offer['id']),
 				'offerType' => $offer['type'],
 				'qrCode' => $offerCode,
-				'user' => ($offer['requiresAuth'] ? 'penaj@net-solution.info' : '')
+				'user' => $user
 			);
 
-			if ($offer['requiresAuth']) {
-				$ch = mcd_request("https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty", $request);
-			} else {
-				$ch = mcd_request("https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOffer", $request);
-			}
+			$ch = mcd_request($codeUrl, $request);
 			$reply = curl_exec($ch);
 			if ($reply) {
 				$reply = json_decode($reply, true);
@@ -76,7 +84,6 @@ if ($offer && !$error) {
 			}
 			curl_close($ch);
 		} else {
-			$error = "Error registrando dispositivo nuevo";
 		}
 	} else {
 		$error = "Esta web es de uso exclusivo para miembros del grupo <a href=\"https://t.me/McDonaldsOro\">@McDonaldsOro</a>";

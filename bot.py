@@ -143,16 +143,21 @@ isFirstMessage = True
 for offer in currentOffers:
 	publishedMessage = database.getOfferData(offer)
 
-	replyMarkup = {
-		'inline_keyboard': [
-			[
-				{
-					'text': strings['exchangeText'],
-					'url': config['exchangeUrl'] % {'code': offer.code, 'authKey': publishedMessage.getNewestAuthKey()}
-				}
+	if offer.type == 1 and offer.level == 2:
+		replyMarkup = {
+			'inline_keyboard': []
+		}
+	else:
+		replyMarkup = {
+			'inline_keyboard': [
+				[
+					{
+						'text': strings['exchangeText'],
+						'url': config['exchangeUrl'] % {'code': offer.code, 'authKey': publishedMessage.getNewestAuthKey()}
+					}
+				]
 			]
-		]
-	}
+		}
 
 	if publishedMessage.messageId is None:
 		price = '%.02f' % offer.price

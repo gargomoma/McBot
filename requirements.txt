@@ -12,3 +12,6 @@ python-dateutil==2.7.*
 
 # Keeping offers unique yet sorted by appearance on app
 orderedset==2.0.*
+
+# Removing special characters from random emails
+Unidecode==1.0.*

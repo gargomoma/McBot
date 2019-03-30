@@ -7,6 +7,7 @@ from datetime import timedelta
 from orderedset import OrderedSet
 
 Offer = namedtuple('Offer', ('id', 'name', 'type', 'level', 'big', 'code', 'mcAutoCode', 'price', 'image', 'dateFrom', 'dateTo'))
+UserData = namedtuple('UserData', ('name', 'email', 'password', 'phone'))
 
 class ApiException(Exception):
 	pass
@@ -66,9 +67,17 @@ class Fetcher:
 
 class SimplifiedOfferFetcher(Fetcher):
 
+	def __init__(self, *args, **kwargs):
+		if 'deviceId' in kwargs:
+			self.deviceId = kwargs.pop('deviceId')
+		else:
+			self.deviceId = secrets.token_hex(8)
+
+		super().__init__(*args, **kwargs)
+
 	def _run(self):
 		request = {
-			'deviceId': secrets.token_hex(16),
+			'deviceId': self.deviceId
 		}
 		return self.session.post(self.endpoint, json=request)
 
@@ -137,21 +146,17 @@ class SimplifiedCalendarOfferFetcher(SimplifiedOfferFetcher):
 		return datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
 
 class RegisterUserFetcher(Fetcher):
-	def __init__(self, endpoint, email, phone, name, password, proxy=None):
+	def __init__(self, endpoint, userData, proxy=None):
 		super().__init__(endpoint, proxy)
-
-		self.email = email
-		self.phone = phone
-		self.name = name
-		self.password = password
+		self.userData = userData
 
 	def _run(self):
 		request = {
 			"birthdate": None,
-			"email": self.email,
-			"mobilephone": self.phone,
-			"name": self.name,
-			"password": self.password,
+			"email": self.userData.email,
+			"mobilephone": self.userData.phone,
+			"name": self.userData.name,
+			"password": self.userData.password,
 			"receiveEmail": False,
 			"restaurants": [],
 			"socialId": None,

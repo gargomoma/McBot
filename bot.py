@@ -6,19 +6,67 @@ import csv
 import dateutil.tz
 import json
 import os
+import random
 import requests
 import sys
+import secrets
+import string
 import time
 from database import Database
 from database import PublishedMessage
 from datetime import datetime
+from devinfo import DevInfoGenerator
 from mcdapi import ApiException
 from mcdapi import ApiErrorException
 from mcdapi import SimplifiedLoyaltyOfferFetcher
 from mcdapi import SimplifiedCalendarOfferFetcher
+from mcdapi import RegisterUserFetcher
+from mcdapi import UserData
 from orderedset import OrderedSet
 from ruamel import yaml
+from unidecode import unidecode
 from util import random_string
+
+def register_random_user(config, strings):
+	for retry in range(10):
+		nameparts = [random.choice(strings['names']['given']), random.choice(strings['names']['last'])]
+		if random.randint(0, 1) == 1:
+			nameparts.append(random.choice(strings['names']['last']))
+
+		namecasing = random.randint(0, 2)
+		if namecasing == 0:
+			nameparts = [name.upper() for name in nameparts]
+		elif namecasing == 1:
+			nameparts = [name.lower() for name in nameparts]
+		else:
+			nameparts = [name.capitalize() for name in nameparts]
+
+		name = ' '.join(nameparts)
+
+		mailparts = [unidecode(x[:random.randint(5, 8)]).lower() for x in nameparts]
+		random.shuffle(mailparts)
+		mailparts = mailparts[:2]
+
+		mailparts.append(str(random.randint(1, 9999)))
+		mail = random.choice(['.', '', '']).join(mailparts) + '@' + random.choice(strings['mailHosts'])
+
+		password = ''.join([random.choice(string.ascii_letters) for i in range(random.randint(6, 10))])
+
+		phone = random.choice(('6', '7')) + str(random.randint(0, 99999999)).zfill(8)
+
+		userData = UserData(name=name, email=mail, password=password, phone=phone)
+		print('Trying ' + str(userData))
+
+		fetcher = RegisterUserFetcher(endpoint=config['endpoints']['register'], userData=userData, proxy=config.get('proxy'))
+		try:
+			response = fetcher.fetch()
+		except ApiErrorException as e:
+			if e.errorCode == 800:
+				continue
+			raise e
+
+		return userData
+	return None
 
 parser = argparse.ArgumentParser(description='Updates McDonalds offers')
 parser.add_argument('config', help='YAML configuration', type=argparse.FileType('r'))
@@ -27,6 +75,25 @@ args = parser.parse_args()
 config = yaml.safe_load(args.config)
 with open(config['strings']) as f:
 	strings = yaml.safe_load(f)
+
+devInfo = DevInfoGenerator().random()
+
+proxy = config.get('proxy')
+if proxy is not None:
+	proxy = {
+		'http': proxy,
+		'https': proxy
+	}
+
+response = requests.post(config['endpoints']['metrics'], json=devInfo, proxies=proxy)
+if not 'OK' in response.text:
+	print('Metrics response failed: ' + response.text)
+	sys.exit(1)
+
+userData = register_random_user(config, strings)
+if userData is None:
+	print('Could not register any user!', file=sys.stderr)
+	sys.exit(1)
 
 database = Database.loadOrCreate(config['database'])
 
@@ -65,7 +132,12 @@ for offer in currentOffers:
 	}
 
 with open(config['offerJson'], 'w') as f:
-	json.dump(offersByCode, f)
+	jsoninfo = {
+		'offers': offersByCode,
+		'email': userData.email,
+		'devInfo': devInfo
+	}
+	json.dump(jsoninfo, f)
 
 isFirstMessage = True
 for offer in currentOffers:

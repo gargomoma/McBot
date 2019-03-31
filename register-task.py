@@ -42,11 +42,9 @@ def register_random_user(config, names):
 
 		password = ''.join([random.choice(string.ascii_letters) for i in range(random.randint(6, 10))])
 
-		phone = random.choice(('6', '7')) + str(random.randint(0, 99999999)).zfill(8)
-
 		birthDate = '%04i-%02d' % (random.randint(1960, 2002), random.randint(1, 12))
 
-		userData = UserData(name=name, email=mail, password=password, phone=phone, birthDate=birthDate)
+		userData = UserData(name=name, email=mail, password=password, phone=None, birthDate=birthDate)
 		print('Trying ' + str(userData))
 
 		fetcher = RegisterUserFetcher(endpoint=config['endpoints']['register'], userData=userData, proxy=config.get('proxy'))

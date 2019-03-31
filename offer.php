@@ -46,9 +46,11 @@ if (!$regionOk) {
 if ($offer && !$error) {
 	if (in_array($authKey, $offer['authKeys'])) {
 		if ($offer['requiresAuth']) {
-			$user = $offerInfo['email'];
+			$authInfo = $offerInfo['auth'];
+			$authInfo = $authInfo[rand(0, count($authInfo) - 1)];
 			$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty";
-			$devinfo = $offerInfo['devInfo'];
+			$user = $authInfo['email'];
+			$devId = $authInfo['deviceId'];
 		} else {
 			$user = '';
 			$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOffer";
@@ -59,11 +61,12 @@ if ($offer && !$error) {
 			if (strpos($reply, "OK") === false) {
 				$error = "Error registrando dispositivo nuevo";
 			}
+			$devId = $devinfo["udid"];
 		}
 
 		if (!$error) {
 			$request = array(
-				'deviceId' => $devinfo["udid"],
+				'deviceId' => $devId,
 				'offerId' => strval($offer['id']),
 				'offerType' => $offer['type'],
 				'qrCode' => $offerCode,

@@ -1,0 +1,27 @@
+﻿
+decimalSeparator: ","
+
+offer: |
+    {{#typeBronze}}🥉{{/typeBronze}}{{#typeSilver}}🥈{{/typeSilver}}{{#typeGold}}🥇{{/typeGold}}{{^typeLoyalty}}🍔{{/typeLoyalty}} *{{name}}*{{#big}} (grande){{/big}}
+    {{#typeMcnific}}❗❗❗ *Oferta mes McNífico* ❗❗❗
+    {{/typeMcnific}}💶 Precio: *{{price}}€*
+    📅 Hasta el {{toDay}} de {{toMonthName}}
+
+offerExpired: "Código caducado"
+
+exchangeText: "Canjear código"
+
+months:
+  - enero
+  - febrero
+  - marzo
+  - abril
+  - mayo
+  - junio
+  - julio
+  - agosto
+  - septiembre
+  - octubre
+  - noviembre
+  - diciembre
+

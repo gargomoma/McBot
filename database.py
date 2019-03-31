@@ -1,7 +1,7 @@
 
 import pickle
+import secrets
 from collections import namedtuple
-from util import random_string
 
 OfferDiff = namedtuple('OfferDiff', ('new', 'deleted'))
 
@@ -12,7 +12,7 @@ class PublishedMessage:
 
 	def addAuthKey(self, authKey=None):
 		if authKey is None:
-			authKey = random_string(8)
+			authKey = secrets.token_hex(8)
 		if len(self.authKeys) > 5:
 			self.authKeys.pop(0)
 		self.authKeys.append(authKey)

@@ -49,7 +49,7 @@ def register_random_user(config, names):
 		try:
 			response = fetcher.fetch()
 		except ApiErrorException as e:
-			if e.errorCode == 800:
+			if e.errorCode // 100 == 8:
 				continue
 			raise e
 
@@ -88,7 +88,7 @@ for i in range(config['register']['retries']):
 		time.sleep(random.randint(config['register']['delay']['min'], config['register']['delay']['max']))
 		continue
 
-	authInfo.append({'email': userData.email, 'deviceId': devInfo['udid']})
+	authInfo.append({'email': userData.email, 'dev': devInfo})
 	if len(authInfo) == config['register']['max']:
 		break
 

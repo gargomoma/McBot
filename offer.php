@@ -48,29 +48,33 @@ if ($offer && !$error) {
 		if ($offer['requiresAuth']) {
 			$authInfoList = @json_decode(@file_get_contents("auth.json"), true);
 			if ($authInfoList) {
-				$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty";
-				$authInfo = $authInfoList[rand(0, count($authInfoList) - 1)];
+				$codeUrl = "https://mcdonaldsws.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty";
+				$authInfo = $authInfoList[mt_rand(0, count($authInfoList) - 1)];
 				$user = $authInfo['email'];
-				$devId = $authInfo['deviceId'];
+				$devinfo = $authInfo['dev'];
+				$devinfo['dateTime'] = date('c');
+				$devinfo['isFirstRun'] = '0';
+				$devinfo['runningSecs'] = mt_rand(5, 100);
 			} else {
 				$error = 'No se ha podido encontrar ninguna cuenta disponible';
 			}
 		} else {
 			$user = '';
-			$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOffer";
-
+			$codeUrl = "https://mcdonaldsws.mo2o.com/es/v3/getUniqueCodeOffer";
 			$devinfo = devinfo_random();
+		}
+
+		if (!$error) {
 			$ch = mcd_request('https://api3.mo2o.com/mobilemetrics/app/v2/', $devinfo);
 			$reply = curl_exec($ch);
 			if (strpos($reply, "OK") === false) {
 				$error = "Error registrando dispositivo nuevo";
 			}
-			$devId = $devinfo["udid"];
 		}
 
 		if (!$error) {
 			$request = array(
-				'deviceId' => $devId,
+				'deviceId' => $devinfo['udid'],
 				'offerId' => strval($offer['id']),
 				'offerType' => $offer['type'],
 				'qrCode' => $offerCode,

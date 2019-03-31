@@ -105,6 +105,10 @@ for i in range(config['register']['retries']):
 
 	time.sleep(random.randint(config['register']['delay']['min'], config['register']['delay']['max']))
 
+if len(authInfo) == 0:
+	print('Failed to register any user!', file=sys.stderr)
+	sys.exit(1)
+
 database = Database.loadOrCreate(config['database'])
 
 currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers'], config.get('proxy')).fetch()

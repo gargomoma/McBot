@@ -28,7 +28,7 @@ from unidecode import unidecode
 from util import random_string
 
 def register_random_user(config, strings):
-	for retry in range(10):
+	for i in range(config['register']['retries']):
 		nameparts = [random.choice(strings['names']['given']), random.choice(strings['names']['last'])]
 		if random.randint(0, 1) == 1:
 			nameparts.append(random.choice(strings['names']['last']))
@@ -40,7 +40,6 @@ def register_random_user(config, strings):
 			nameparts = [name.lower() for name in nameparts]
 		else:
 			nameparts = [name.capitalize() for name in nameparts]
-
 		name = ' '.join(nameparts)
 
 		mailparts = [unidecode(x[:random.randint(5, 8)]).lower() for x in nameparts]
@@ -76,7 +75,7 @@ config = yaml.safe_load(args.config)
 with open(config['strings']) as f:
 	strings = yaml.safe_load(f)
 
-devInfo = DevInfoGenerator().random()
+authInfo = list()
 
 proxy = config.get('proxy')
 if proxy is not None:
@@ -85,15 +84,26 @@ if proxy is not None:
 		'https': proxy
 	}
 
-response = requests.post(config['endpoints']['metrics'], json=devInfo, proxies=proxy)
-if not 'OK' in response.text:
-	print('Metrics response failed: ' + response.text)
-	sys.exit(1)
+for i in range(config['register']['retries']):
+	devInfo = DevInfoGenerator().random()
 
-userData = register_random_user(config, strings)
-if userData is None:
-	print('Could not register any user!', file=sys.stderr)
-	sys.exit(1)
+	response = requests.post(config['endpoints']['metrics'], json=devInfo, proxies=proxy)
+	if not 'OK' in response.text:
+		print('Metrics response failed: ' + response.text)
+		time.sleep(random.randint(config['register']['delay']['min'], config['register']['delay']['max']))
+		continue
+
+	userData = register_random_user(config, strings)
+	if userData is None:
+		print('Could not register any user!', file=sys.stderr)
+		time.sleep(random.randint(config['register']['delay']['min'], config['register']['delay']['max']))
+		continue
+
+	authInfo.append({'email': userData.email, 'deviceId': devInfo['udid']})
+	if len(authInfo) == config['register']['max']:
+		break
+
+	time.sleep(random.randint(config['register']['delay']['min'], config['register']['delay']['max']))
 
 database = Database.loadOrCreate(config['database'])
 
@@ -134,8 +144,7 @@ for offer in currentOffers:
 with open(config['offerJson'], 'w') as f:
 	jsoninfo = {
 		'offers': offersByCode,
-		'email': userData.email,
-		'devInfo': devInfo
+		'auth': authInfo
 	}
 	json.dump(jsoninfo, f)
 

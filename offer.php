@@ -25,10 +25,10 @@ if (!$regionOk) {
 }
 
 // Finally, use remote IP matching
-if (!$regionOk) {
-	//$ip = $_SERVER['REMOTE_ADDR'];
-	$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+//$ip = $_SERVER['REMOTE_ADDR'];
+$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
 
+if (!$regionOk) {
 	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
 		$ipLocationDb = new IP2Location\Database('ip2location/IP2LOCATION-LITE-DB1.IPV6.BIN');
 	} else {
@@ -55,22 +55,44 @@ if ($offer && !$error) {
 				$devinfo['dateTime'] = date('c');
 				$devinfo['isFirstRun'] = '0';
 				$devinfo['runningSecs'] = mt_rand(5, 100);
+				$f = fopen('log.txt', 'a');
+				fwrite($f, date('c') . ' ' . $ip . ' ' . $user . "\n");
+				fclose($f);
 			} else {
 				$error = 'No se ha podido encontrar ninguna cuenta disponible';
 			}
+			//$userLevel = 1;
 		} else {
 			$user = '';
+			//$userLevel = 0;
 			$codeUrl = "https://mcdonaldsws.mo2o.com/es/v3/getUniqueCodeOffer";
 			$devinfo = devinfo_random();
-		}
-
-		if (!$error) {
 			$ch = mcd_request('https://api3.mo2o.com/mobilemetrics/app/v2/', $devinfo);
 			$reply = curl_exec($ch);
 			if (strpos($reply, "OK") === false) {
 				$error = "Error registrando dispositivo nuevo";
 			}
 		}
+
+		/*
+		if (!$error) {
+			$request = array(
+				'idDevice'=> $devinfo['udid'],
+				'idOffer'=> $offer['id'],
+				'userLevel'=> $userLevel
+			);
+			$ch = mcd_request("https://mcdonaldsws.mo2o.com/es/v1/notificationsExchangeKiosko", $request);
+			$reply = curl_exec($ch);
+			if ($reply) {
+				$reply = json_decode($reply, true);
+				if ($reply['code'] != 100) {
+					$error = 'Error solicitando canjeo: ' . $reply['msg'];
+				}
+			} else {
+				$error = 'Error de comunicación durante el canjeo';
+			}
+		}
+		*/
 
 		if (!$error) {
 			$request = array(
@@ -94,8 +116,8 @@ if ($offer && !$error) {
 				$error = "Error de comunicación: " . curl_error($ch);
 			}
 			curl_close($ch);
-		} else {
 		}
+
 	} else {
 		$error = "Esta web es de uso exclusivo para miembros del grupo <a href=\"https://t.me/McDonaldsOro\">@McDonaldsOro</a>";
 	}

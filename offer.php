@@ -8,9 +8,9 @@ require_once('curlclient.php');
 
 $error = null;
 
-$offerInfo = json_decode(file_get_contents("codes.json"), true);
+$offers = json_decode(file_get_contents("codes.json"), true);
 $offerCode = @$_GET['code'];
-$offer = @$offerInfo['offers'][$offerCode];
+$offer = @$offers[$offerCode];
 $authKey = @$_GET['authKey'];
 
 $regionOk = false;
@@ -46,11 +46,15 @@ if (!$regionOk) {
 if ($offer && !$error) {
 	if (in_array($authKey, $offer['authKeys'])) {
 		if ($offer['requiresAuth']) {
-			$authInfo = $offerInfo['auth'];
-			$authInfo = $authInfo[rand(0, count($authInfo) - 1)];
-			$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty";
-			$user = $authInfo['email'];
-			$devId = $authInfo['deviceId'];
+			$authInfoList = @json_decode(@file_get_contents("auth.json"), true);
+			if ($authInfoList) {
+				$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty";
+				$authInfo = $authInfoList[rand(0, count($authInfoList) - 1)];
+				$user = $authInfo['email'];
+				$devId = $authInfo['deviceId'];
+			} else {
+				$error = 'No se ha podido encontrar ninguna cuenta disponible';
+			}
 		} else {
 			$user = '';
 			$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOffer";

@@ -13,6 +13,8 @@ from devinfo import DevInfoGenerator
 from mcdapi import ApiErrorException
 from mcdapi import RegisterUserFetcher
 from mcdapi import UserData
+from mcdapi import LoginData
+from mcdapi import LoginUserFetcher
 from ruamel import yaml
 from unidecode import unidecode
 
@@ -42,7 +44,9 @@ def register_random_user(config, names):
 
 		phone = random.choice(('6', '7')) + str(random.randint(0, 99999999)).zfill(8)
 
-		userData = UserData(name=name, email=mail, password=password, phone=phone)
+		birthDate = '%04i-%02d' % (random.randint(1960, 2002), random.randint(1, 12))
+
+		userData = UserData(name=name, email=mail, password=password, phone=phone, birthDate=birthDate)
 		print('Trying ' + str(userData))
 
 		fetcher = RegisterUserFetcher(endpoint=config['endpoints']['register'], userData=userData, proxy=config.get('proxy'))
@@ -87,6 +91,10 @@ for i in range(config['register']['retries']):
 		print('Could not register any user!', file=sys.stderr)
 		time.sleep(random.randint(config['register']['delay']['min'], config['register']['delay']['max']))
 		continue
+
+	loginData = LoginData(deviceId=devInfo['udid'], email=userData.email, password=userData.password)
+	fetcher = LoginUserFetcher(endpoint=config['endpoints']['login'], loginData=loginData, proxy=config.get('proxy'))
+	print(fetcher.fetch())
 
 	authInfo.append({'email': userData.email, 'dev': devInfo})
 	if len(authInfo) == config['register']['max']:

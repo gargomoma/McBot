@@ -7,7 +7,8 @@ from datetime import timedelta
 from orderedset import OrderedSet
 
 Offer = namedtuple('Offer', ('id', 'name', 'type', 'level', 'big', 'code', 'mcAutoCode', 'price', 'image', 'dateFrom', 'dateTo'))
-UserData = namedtuple('UserData', ('name', 'email', 'password', 'phone'))
+UserData = namedtuple('UserData', ('name', 'email', 'password', 'phone', 'birthDate'))
+LoginData = namedtuple('LoginData', ('deviceId', 'email', 'password'))
 
 class ApiException(Exception):
 	pass
@@ -152,7 +153,7 @@ class RegisterUserFetcher(Fetcher):
 
 	def _run(self):
 		request = {
-			"birthdate": None,
+			"birthdate": self.userData.birthDate,
 			"email": self.userData.email,
 			"mobilephone": self.userData.phone,
 			"name": self.userData.name,
@@ -162,5 +163,21 @@ class RegisterUserFetcher(Fetcher):
 			"socialId": None,
 			"socialToken": None,
 			"socialType": None
+		}
+		return self.session.post(self.endpoint, json=request)
+
+class LoginUserFetcher(Fetcher):
+	def __init__(self, endpoint, loginData, proxy=None):
+		super().__init__(endpoint, proxy)
+		self.loginData = loginData
+
+	def _run(self):
+		request = {
+			'deviceId': self.loginData.deviceId,
+			'email': self.loginData.email,
+			'password': self.loginData.password,
+			'socialId': None,
+			'socialToken': None,
+			'socialType': None
 		}
 		return self.session.post(self.endpoint, json=request)

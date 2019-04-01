@@ -4,7 +4,9 @@ decimalSeparator: ","
 offer: |
     {{#typeBronze}}🥉{{/typeBronze}}{{#typeSilver}}🥈{{/typeSilver}}{{#typeGold}}🥇{{/typeGold}}{{^typeLoyalty}}🍔{{/typeLoyalty}} *{{name}}*{{#big}} (grande){{/big}}
     {{#typeMcnific}}❗❗❗ *Oferta mes McNífico* ❗❗❗
-    {{/typeMcnific}}💶 Precio: *{{price}}€*
+    {{/typeMcnific}}{{#typeGold}}📱 *Sólo disponible desde la app*
+    {{/typeGold}}💶 Precio: *{{price}}€*
+    🚗 Código McAuto: `{{mcAutoCode}}`
     📅 Hasta el {{toDay}} de {{toMonthName}}
 
 offerExpired: "Código caducado"

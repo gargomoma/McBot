@@ -48,7 +48,7 @@ if ($offer && !$error) {
 		if ($offer['requiresAuth']) {
 			$authInfoList = @json_decode(@file_get_contents("auth.json"), true);
 			if ($authInfoList) {
-				$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty";
+				$codeUrl = "https://mcdonaldsws-app1.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty";
 				$authInfo = $authInfoList[mt_rand(0, count($authInfoList) - 1)];
 				$user = $authInfo['email'];
 				$devinfo = $authInfo['dev'];
@@ -56,9 +56,6 @@ if ($offer && !$error) {
 				$devinfo['isFirstRun'] = '0';
 				$devinfo['runningSecs'] = mt_rand(5, 100);
 				$cookies = $authInfo['cookies'];
-				$f = fopen('log.txt', 'a');
-				fwrite($f, date('c') . ' ' . $ip . ' ' . $user . "\n");
-				fclose($f);
 			} else {
 				$error = 'No se ha podido encontrar ninguna cuenta disponible';
 			}
@@ -66,7 +63,7 @@ if ($offer && !$error) {
 		} else {
 			$user = '';
 			$userLevel = 0;
-			$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOffer";
+			$codeUrl = "https://mcdonaldsws-app1.mo2o.com/es/v3/getUniqueCodeOffer";
 			$devinfo = devinfo_random();
 			$cookies = array();
 			$ch = mcd_request('https://api3.mo2o.com/mobilemetrics/app/v2/', $devinfo);
@@ -76,13 +73,14 @@ if ($offer && !$error) {
 			}
 		}
 
+		/*
 		if (!$error) {
 			$request = array(
 				'idDevice'=> $devinfo['udid'],
 				'idOffer'=> $offer['id'],
 				'userLevel'=> $userLevel
 			);
-			$ch = mcd_request("https://mcdonaldsws-clr.mo2o.com/es/v1/notificationsExchangeKiosko", $request);
+			$ch = mcd_request("https://mcdonaldsws-app1.mo2o.com/es/v1/notificationsExchangeKiosko", $request);
 			$reply = curl_exec($ch);
 			if ($reply) {
 				$reply = json_decode($reply, true);
@@ -93,7 +91,7 @@ if ($offer && !$error) {
 				$error = 'Error de comunicación durante el canjeo';
 			}
 		}
-
+		*/
 		if (!$error) {
 			$request = array(
 				'deviceId' => $devinfo['udid'],
@@ -106,9 +104,9 @@ if ($offer && !$error) {
 			$ch = mcd_request($codeUrl, $request, $cookies);
 			$reply = curl_exec($ch);
 			if ($reply) {
-				echo "<!-- ";
-				var_dump($reply);
-				echo "-->";
+				//echo "<!-- ";
+				//var_dump($reply);
+				//echo "-->";
 				$reply = json_decode($reply, true);
 				if ($reply['code'] == 100) {
 					$uniqueCode = $reply['response']['uniqueCode'];
@@ -120,7 +118,6 @@ if ($offer && !$error) {
 			}
 			curl_close($ch);
 		}
-
 	} else {
 		$error = "Esta web es de uso exclusivo para miembros del grupo <a href=\"https://t.me/McDonaldsOro\">@McDonaldsOro</a>";
 	}

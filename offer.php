@@ -48,25 +48,27 @@ if ($offer && !$error) {
 		if ($offer['requiresAuth']) {
 			$authInfoList = @json_decode(@file_get_contents("auth.json"), true);
 			if ($authInfoList) {
-				$codeUrl = "https://mcdonaldsws.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty";
+				$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOfferByLoyalty";
 				$authInfo = $authInfoList[mt_rand(0, count($authInfoList) - 1)];
 				$user = $authInfo['email'];
 				$devinfo = $authInfo['dev'];
 				$devinfo['dateTime'] = date('c');
 				$devinfo['isFirstRun'] = '0';
 				$devinfo['runningSecs'] = mt_rand(5, 100);
+				$cookies = $authInfo['cookies'];
 				$f = fopen('log.txt', 'a');
 				fwrite($f, date('c') . ' ' . $ip . ' ' . $user . "\n");
 				fclose($f);
 			} else {
 				$error = 'No se ha podido encontrar ninguna cuenta disponible';
 			}
-			//$userLevel = 1;
+			$userLevel = 1;
 		} else {
 			$user = '';
-			//$userLevel = 0;
-			$codeUrl = "https://mcdonaldsws.mo2o.com/es/v3/getUniqueCodeOffer";
+			$userLevel = 0;
+			$codeUrl = "https://mcdonaldsws-clr.mo2o.com/es/v3/getUniqueCodeOffer";
 			$devinfo = devinfo_random();
+			$cookies = array();
 			$ch = mcd_request('https://api3.mo2o.com/mobilemetrics/app/v2/', $devinfo);
 			$reply = curl_exec($ch);
 			if (strpos($reply, "OK") === false) {
@@ -74,14 +76,13 @@ if ($offer && !$error) {
 			}
 		}
 
-		/*
 		if (!$error) {
 			$request = array(
 				'idDevice'=> $devinfo['udid'],
 				'idOffer'=> $offer['id'],
 				'userLevel'=> $userLevel
 			);
-			$ch = mcd_request("https://mcdonaldsws.mo2o.com/es/v1/notificationsExchangeKiosko", $request);
+			$ch = mcd_request("https://mcdonaldsws-clr.mo2o.com/es/v1/notificationsExchangeKiosko", $request);
 			$reply = curl_exec($ch);
 			if ($reply) {
 				$reply = json_decode($reply, true);
@@ -92,7 +93,6 @@ if ($offer && !$error) {
 				$error = 'Error de comunicación durante el canjeo';
 			}
 		}
-		*/
 
 		if (!$error) {
 			$request = array(
@@ -103,14 +103,17 @@ if ($offer && !$error) {
 				'user' => $user
 			);
 
-			$ch = mcd_request($codeUrl, $request);
+			$ch = mcd_request($codeUrl, $request, $cookies);
 			$reply = curl_exec($ch);
 			if ($reply) {
+				echo "<!-- ";
+				var_dump($reply);
+				echo "-->";
 				$reply = json_decode($reply, true);
 				if ($reply['code'] == 100) {
 					$uniqueCode = $reply['response']['uniqueCode'];
 				} else {
-					$error = "Respuesta inválida: " . $reply['msg'];
+					$error = "Respuesta inválida: " . $reply['msg'] . ' (' . $reply['code'] . ')';
 				}
 			} else {
 				$error = "Error de comunicación: " . curl_error($ch);
@@ -130,7 +133,7 @@ if ($offer && !$error) {
 		<meta charset="utf-8">
 		<title><?= $offer ? $offer['name'] : "Error" ?></title>
 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-		<link rel="stylesheet" href="style.css">
+		<link rel="stylesheet" href="style2.css">
 		<link rel="shortcut icon" href="favicon.ico">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	</head>

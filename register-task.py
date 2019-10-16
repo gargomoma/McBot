@@ -33,12 +33,12 @@ def register_random_user(config, names):
 			nameparts = [name.capitalize() for name in nameparts]
 		name = ' '.join(nameparts)
 
-		mailparts = [unidecode(x[:random.randint(5, 8)]).lower() for x in nameparts]
+		mailparts = [unidecode(x[:random.randint(3, 6)]).lower() for x in nameparts]
 		random.shuffle(mailparts)
 		mailparts = mailparts[:2]
 
 		mailparts.append(str(random.randint(1, 9999)))
-		mail = random.choice(['.', '', '']).join(mailparts) + '@' + random.choice(names['mailHosts'])
+		mail = ''.join(mailparts) + '@' + random.choice(names['mailHosts'])
 
 		password = ''.join([random.choice(string.ascii_letters) for i in range(random.randint(6, 10))])
 
@@ -47,7 +47,7 @@ def register_random_user(config, names):
 		userData = UserData(name=name, email=mail, password=password, phone=None, birthDate=birthDate)
 		print('Trying ' + str(userData))
 
-		fetcher = RegisterUserFetcher(endpoint=config['endpoints']['register'], userData=userData, proxy=config.get('proxy'))
+		fetcher = RegisterUserFetcher(endpoint=config['endpoints']['register'], userData=userData, proxy=config.get('proxy'), cert=config.get('cert'))
 		try:
 			response = fetcher.fetch()
 		except ApiErrorException as e:
@@ -75,14 +75,41 @@ if proxy is not None:
 		'https': proxy
 	}
 
+def rndb64(length):
+	bytecount = (length * 4 + 2) // 3
+	token = secrets.token_urlsafe(bytecount)
+	return token[:length]
+
 for i in range(config['register']['retries']):
 	devInfo = DevInfoGenerator().random()
+
+	params = {
+		'udid': devInfo['udid'],
+		'token': rndb64(11) + ':' + rndb64(140),
+		'appId': '3976',
+		'language': 'ES',
+		'brand': devInfo['device'],
+		'model': devInfo['model'],
+		'deviceOS': 'ANDROID',
+		'deviceOSVersion': devInfo['version'],
+		'appVersion': devInfo['appVersion'],
+		'latitude': random.uniform(38, 43),
+		'longitude': random.uniform(-6.64, -1.04),
+		'country': 'ES',
+		'isTablet': '0',
+		'SDKVersion': devInfo['SDKVersion'],
+		'userIdGA': '',
+		'userDoc': ''
+	}
+	response = requests.get('https://api3.mo2o.com/appPushNotifications/register-device.php', params=params, proxies=proxy)
+	if not 'OK' in response.text:
+		print('Device register failed: ' + response.text)
+		time.sleep(random.randint(config['register']['delay']['min'], config['register']['delay']['max']))
+		continue
 
 	response = requests.post(config['endpoints']['metrics'], json=devInfo, proxies=proxy)
 	if not 'OK' in response.text:
 		print('Metrics response failed: ' + response.text)
-		time.sleep(random.randint(config['register']['delay']['min'], config['register']['delay']['max']))
-		continue
 
 	userData = register_random_user(config, names)
 	if userData is None:
@@ -91,10 +118,10 @@ for i in range(config['register']['retries']):
 		continue
 
 	loginData = LoginData(deviceId=devInfo['udid'], email=userData.email, password=userData.password)
-	fetcher = LoginUserFetcher(endpoint=config['endpoints']['login'], loginData=loginData, proxy=config.get('proxy'))
+	fetcher = LoginUserFetcher(endpoint=config['endpoints']['login'], loginData=loginData, proxy=config.get('proxy'), cert=config.get('cert'))
 	print(fetcher.fetch())
 
-	authInfo.append({'email': userData.email, 'dev': devInfo})
+	authInfo.append({'email': userData.email, 'dev': devInfo, 'cookies': fetcher.session.cookies.get_dict()})
 	if len(authInfo) == config['register']['max']:
 		break
 

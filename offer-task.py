@@ -31,10 +31,11 @@ with open(config['strings']) as f:
 
 database = Database.loadOrCreate(config['database'])
 
-currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers'], config.get('proxy')).fetch()
+print(config.get('cert'))
+currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers'], proxy=config.get('proxy'), cert=config.get('cert')).fetch()
 
 try:
-	calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers'], config.get('proxy')).fetch()
+	calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers'], config.get('proxy'), cert=config.get('cert')).fetch()
 
 	now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo=None)
 	calendarOffers = filter(lambda x: x.dateFrom <= now and x.dateTo >= now, calendarOffers)
@@ -55,7 +56,7 @@ for offer in currentOffers:
 	authKey = secrets.token_hex(8)
 	publishedMessage.addAuthKey(authKey)
 
-	requiresAuth = offer.type == 1 and offer.level in (1, 2)
+	requiresAuth = offer.type == 1
 	offersByCode[offer.code] = {
 		'id': offer.id,
 		'type': offer.type,

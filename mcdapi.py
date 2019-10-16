@@ -29,15 +29,17 @@ class InvalidJsonResponse(ApiException):
 		self.json = json
 
 class Fetcher:
-	def __init__(self, endpoint, proxy=None):
+	def __init__(self, endpoint, proxy=None, cert=None):
 		self.endpoint = endpoint
 		self.session = requests.Session()
-		self.session.headers.update({'accept': 'application/json'})
+		self.session.headers.update({'Accept': 'application/json', 'User-Agent': 'okhttp/3.9.0'})
 		if proxy is not None:
 			self.session.proxies = {
 					'http': proxy,
 					'https': proxy
 			}
+		if cert is not None:
+			self.session.cert = (cert['public'], cert['private'])
 
 	def fetch(self):
 		try:
@@ -147,28 +149,24 @@ class SimplifiedCalendarOfferFetcher(SimplifiedOfferFetcher):
 		return datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
 
 class RegisterUserFetcher(Fetcher):
-	def __init__(self, endpoint, userData, proxy=None):
-		super().__init__(endpoint, proxy)
+	def __init__(self, endpoint, userData, proxy=None, cert=None):
+		super().__init__(endpoint=endpoint, proxy=proxy, cert=cert)
 		self.userData = userData
 
 	def _run(self):
 		request = {
 			"birthdate": self.userData.birthDate,
 			"email": self.userData.email,
-			"mobilephone": self.userData.phone,
 			"name": self.userData.name,
 			"password": self.userData.password,
 			"receiveEmail": False,
-			"restaurants": [],
-			"socialId": None,
-			"socialToken": None,
-			"socialType": None
+			"restaurants": []
 		}
 		return self.session.post(self.endpoint, json=request)
 
 class LoginUserFetcher(Fetcher):
-	def __init__(self, endpoint, loginData, proxy=None):
-		super().__init__(endpoint, proxy)
+	def __init__(self, endpoint, loginData, proxy=None, cert=None):
+		super().__init__(endpoint=endpoint, proxy=proxy, cert=cert)
 		self.loginData = loginData
 
 	def _run(self):

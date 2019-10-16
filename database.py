@@ -13,7 +13,7 @@ class PublishedMessage:
 	def addAuthKey(self, authKey=None):
 		if authKey is None:
 			authKey = secrets.token_hex(8)
-		if len(self.authKeys) > 5:
+		if len(self.authKeys) > 2:
 			self.authKeys.pop(0)
 		self.authKeys.append(authKey)
 

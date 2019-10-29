@@ -43,6 +43,8 @@ if (!$regionOk) {
 	$error = 'Estos códigos son únicamente válidos para McDonalds España.';
 }
 
+require('security.php');
+
 if ($offer && !$error) {
 	if (in_array($authKey, $offer['authKeys'])) {
 		if ($offer['requiresAuth']) {

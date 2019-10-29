@@ -7,7 +7,7 @@ offer: |
     {{/typeMcnific}}{{#typeGold}}📱 *Sólo disponible desde la app*
     {{/typeGold}}💶 Precio: *{{price}}€*
     🚗 Código McAuto: `{{mcAutoCode}}`
-    📅 Hasta el {{toDay}} de {{toMonthName}}
+    📅 {{#isSingleDay}}Sólo el {{fromDay}} de {{fromMonthName}}{{/isSingleDay}}{{^isSingleDay}}Del {{fromDay}}/{{fromMonth}} al {{toDay}}/{{toMonth}}{/isSingleDay}}
 
 offerExpired: "Código caducado"
 

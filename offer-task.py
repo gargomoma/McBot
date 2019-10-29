@@ -30,15 +30,13 @@ with open(config['strings']) as f:
 	strings = yaml.safe_load(f)
 
 database = Database.loadOrCreate(config['database'])
+now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo=None)
 
-print(config.get('cert'))
 currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers'], proxy=config.get('proxy'), cert=config.get('cert')).fetch()
 
 try:
 	calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers'], config.get('proxy'), cert=config.get('cert')).fetch()
-
-	now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo=None)
-	calendarOffers = filter(lambda x: x.dateFrom <= now and x.dateTo >= now, calendarOffers)
+	calendarOffers = filter(lambda x: x.dateTo >= now, calendarOffers)
 
 	currentOffers.update(calendarOffers)
 except ApiErrorException as e:
@@ -73,7 +71,14 @@ isFirstMessage = True
 for offer in currentOffers:
 	publishedMessage = database.getOfferData(offer)
 
-	if offer.type == 1 and offer.level == 2:
+	# Only for calendar offers dates seems to matter.
+	# Loyalty seem to be valid as long as they're listed in the API, even if expired.
+	if offer.type != 7:
+		inTime = True
+	else:
+		inTime = offer.dateFrom <= now
+
+	if offer.type == 1 and offer.level == 2 or not inTime:
 		replyMarkup = {
 			'inline_keyboard': []
 		}
@@ -112,7 +117,8 @@ for offer in currentOffers:
 				'toDay': offer.dateTo.day,
 				'toMonth': offer.dateTo.month,
 				'toMonthName': strings['months'][offer.dateTo.month - 1],
-				'toYear': offer.dateTo.year
+				'toYear': offer.dateTo.year,
+				'isSingleDay': offer.dateFrom.date() == offer.dateTo.date()
 		})
 		offerText = '[\u200B](%s)%s' % (offer.image, offerText)
 

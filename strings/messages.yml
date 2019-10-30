@@ -3,11 +3,11 @@ decimalSeparator: ","
 
 offer: |
     {{#typeBronze}}🥉{{/typeBronze}}{{#typeSilver}}🥈{{/typeSilver}}{{#typeGold}}🥇{{/typeGold}}{{^typeLoyalty}}🍔{{/typeLoyalty}} *{{name}}*{{#big}} (grande){{/big}}
-    {{#typeMcnific}}❗❗❗ *Oferta mes McNífico* ❗❗❗
+    {{#typeMcnific}}❗❗ *Mes McNífico* ❗❗
     {{/typeMcnific}}{{#typeGold}}📱 *Sólo disponible desde la app*
     {{/typeGold}}💶 Precio: *{{price}}€*
     🚗 Código McAuto: `{{mcAutoCode}}`
-    📅 {{#isSingleDay}}Sólo el {{fromDay}} de {{fromMonthName}}{{/isSingleDay}}{{^isSingleDay}}Del {{fromDay}}/{{fromMonth}} al {{toDay}}/{{toMonth}}{/isSingleDay}}
+    📅 Del {{fromDay}}/{{fromMonthName}} al {{toDay}}/{{toMonthName}}
 
 offerExpired: "Código caducado"
 

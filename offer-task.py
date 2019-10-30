@@ -32,16 +32,19 @@ with open(config['strings']) as f:
 database = Database.loadOrCreate(config['database'])
 now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo=None)
 
+print('Fetching loyalty offers')
 currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers'], proxy=config.get('proxy'), cert=config.get('cert')).fetch()
 
-try:
-	calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints']['calendarOffers'], config.get('proxy'), cert=config.get('cert')).fetch()
-	calendarOffers = filter(lambda x: x.dateTo >= now, calendarOffers)
+for endpoint in ('dailyOffer', 'calendarOffers'):
+	print('Fetching %s' % endpoint)
+	try:
+		calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints'][endpoint], config.get('proxy'), cert=config.get('cert')).fetch()
+		calendarOffers = filter(lambda x: x.dateTo >= now, calendarOffers)
 
-	currentOffers.update(calendarOffers)
-except ApiErrorException as e:
-	if e.errorMessage != "KO (message was: Daily offer not found)":
-		raise e
+		currentOffers.update(calendarOffers)
+	except ApiErrorException as e:
+		if e.errorMessage != "KO (message was: Daily offer not found)":
+			raise e
 
 currentOffers = OrderedSet(filter(lambda x: 'prueba' not in x.name.lower(), currentOffers))
 
@@ -94,7 +97,23 @@ for offer in currentOffers:
 			]
 		}
 
+	if publishedMessage.messageId is not None:
+		print('Updating offer %d: %s' % (offer.id, offer.name))
+		data = {
+			'chat_id': config['bot']['channel'],
+			'message_id': publishedMessage.messageId,
+			'reply_markup': replyMarkup
+		}
+
+		response = requests.post('https://api.telegram.org/bot%s/editMessageReplyMarkup' % config['bot']['token'], json=data).json()
+		if not response['ok']:
+			if response['description'] == 'Bad Request: message to edit not found':
+				publishedMessage.messageId = None
+			else:
+				publishedMessage.popAuthKey()
+
 	if publishedMessage.messageId is None:
+		print('Publishing offer %d: %s' % (offer.id, offer.name))
 		price = '%.02f' % offer.price
 		price = price.replace('.', strings['decimalSeparator'])
 
@@ -121,7 +140,6 @@ for offer in currentOffers:
 				'isSingleDay': offer.dateFrom.date() == offer.dateTo.date()
 		})
 		offerText = '[\u200B](%s)%s' % (offer.image, offerText)
-
 		data = {
 			'chat_id': config['bot']['channel'],
 			'text': offerText,
@@ -137,19 +155,10 @@ for offer in currentOffers:
 			publishedMessage.popAuthKey()
 
 		isFirstMessage = False
-	else:
-		data = {
-			'chat_id': config['bot']['channel'],
-			'message_id': publishedMessage.messageId,
-			'reply_markup': replyMarkup
-		}
-
-		response = requests.post('https://api.telegram.org/bot%s/editMessageReplyMarkup' % config['bot']['token'], json=data).json()
-		if not response['ok']:
-			publishedMessage.popAuthKey()
 
 for offer in list(database.publishedOffers.keys() - currentOffers):
 	message = database.getOfferData(offer)
+	print('Deleting offer %d: %s' % (offer.id, offer.name))
 
 	data = {
 		'chat_id': config['bot']['channel'],

@@ -6,7 +6,7 @@ offer: |
     {{#typeMcnific}}❗❗ *Mes McNífico* ❗❗
     {{/typeMcnific}}{{#typeGold}}📱 *Sólo disponible desde la app*
     {{/typeGold}}💶 Precio: *{{price}}€*{{#bigPrice}} (grande: *{{bigPrice}}€*){{/bigPrice}}
-    {{#inTime}}🚗 Código McAuto: `{{mcAuto}}`{{#bigMcAuto}} (grande: *{{bigMcAuto}}€*){{/bigMcAuto}}
+    {{#inTime}}🚗 McAuto: `{{mcAuto}}`{{#bigMcAuto}} (grande: `{{bigMcAuto}}`){{/bigMcAuto}}
     📅 Hasta el {{toDay}} de {{toMonthName}}{{/inTime}}{{^inTime}}⚠️ A partir del {{fromDay}} de {{fromMonthName}}{{/inTime}}
 
 offerExpired: "Código caducado"

@@ -8,9 +8,10 @@ require_once('curlclient.php');
 
 $error = null;
 
-$offers = json_decode(file_get_contents("codes.json"), true);
+$offerData = json_decode(file_get_contents("codes.json"), true);
 $offerCode = @$_GET['code'];
-$offer = @$offers[$offerCode];
+$offerId = @$offerData['codeToId'][$offerCode];
+$offer = $offerId ? $offerData['offersById'][$offerId] : null;
 $authKey = @$_GET['authKey'];
 
 $regionOk = false;
@@ -79,7 +80,7 @@ if ($offer && !$error) {
 		if (!$error) {
 			$request = array(
 				'idDevice'=> $devinfo['udid'],
-				'idOffer'=> $offer['id'],
+				'idOffer'=> $offerId,
 				'userLevel'=> $userLevel
 			);
 			$ch = mcd_request("https://mcdonaldsws-app1.mo2o.com/es/v1/notificationsExchangeKiosko", $request);
@@ -97,7 +98,7 @@ if ($offer && !$error) {
 		if (!$error) {
 			$request = array(
 				'deviceId' => $devinfo['udid'],
-				'offerId' => strval($offer['id']),
+				'offerId' => $offerId,
 				'offerType' => $offer['type'],
 				'qrCode' => $offerCode,
 				'user' => $user
@@ -159,7 +160,7 @@ if ($offer && !$error) {
 			<?php } ?>
 		</main>
 		<div class="fullimage">
-			<?php if (!$error) { ?>
+			<?php if (@$uniqueCode) { ?>
 				<img id="offerqr" src="qrgen.php?code=<?= $uniqueCode ?>" alt="<?= $uniqueCode ?>">
 			<?php } ?>
 		</div>

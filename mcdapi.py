@@ -116,12 +116,13 @@ class SimplifiedLoyaltyOfferFetcher(SimplifiedOfferFetcher):
 	END_OF_DAY = timedelta(days=1, seconds=-1)
 
 	def _processResponse(self, response):
-		processed = list()
+		processed = dict()
 
 		for offer in response['offers']:
 			dateFrom = self._parseDate(offer['dateFrom'])
 			dateTo = self._parseDate(offer['dateTo'], True)
-			processed.append(self._processOffer(offer, dateFrom, dateTo))
+			offer = self._processOffer(offer, dateFrom, dateTo)
+			processed[offer.id] = offer
 
 		return processed
 
@@ -133,12 +134,13 @@ class SimplifiedLoyaltyOfferFetcher(SimplifiedOfferFetcher):
 
 class SimplifiedCalendarOfferFetcher(SimplifiedOfferFetcher):
 	def _processResponse(self, response):
-		processed = list()
+		processed = dict()
 
 		for promotion in response['offersPromotion']:
 			dateFrom = self._parseTimestamp(promotion['dateFromOffer'])
 			dateTo = self._parseTimestamp(promotion['dateToOffer'])
-			processed.append(self._processOffer(promotion['offer'], dateFrom, dateTo))
+			offer = self._processOffer(promotion['offer'], dateFrom, dateTo)
+			processed[offer.id] = offer
 
 		return processed
 

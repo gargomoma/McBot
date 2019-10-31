@@ -38,21 +38,21 @@ for endpoint in ('dailyOffer', 'calendarOffers'):
 	print('Fetching %s' % endpoint)
 	try:
 		calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints'][endpoint], config.get('proxy'), cert=config.get('cert')).fetch()
-		calendarOffers = filter(lambda x: x.dateTo >= now, calendarOffers)
+		calendarOffers = filter(lambda x: x[1].dateTo >= now, calendarOffers.items())
 
-		currentOffers.extend(calendarOffers)
+		currentOffers.update(calendarOffers)
 	except ApiErrorException as e:
 		if e.errorMessage != "KO (message was: Daily offer not found)":
 			raise e
 
-currentOffers = list(filter(lambda x: 'prueba' not in x.name.lower(), currentOffers))
+currentOffers = dict(filter(lambda x: 'prueba' not in x[1].name.lower(), currentOffers.items()))
 
 if len(currentOffers) < config['minOfferCount']:
 	sys.exit(0)
 
 codeToId = dict()
 offersById = dict()
-for offer in currentOffers:
+for offer in currentOffers.values():
 	publishedMessage = database.getOrCreateOffer(offer.id)
 	authKey = secrets.token_hex(8)
 	publishedMessage.addAuthKey(authKey)
@@ -73,10 +73,8 @@ for offer in currentOffers:
 with open(config['offerJson'], 'w') as f:
 	json.dump({'codeToId': codeToId, 'offersById': offersById}, f)
 
-print(database.publishedOffers)
-
 isFirstMessage = True
-for offer in currentOffers:
+for offer in currentOffers.values():
 	publishedMessage = database.getOfferData(offer.id)
 
 	# Only for calendar offers dates seems to matter.
@@ -203,7 +201,7 @@ for offer in currentOffers:
 
 		isFirstMessage = False
 
-for offerId in list(database.publishedOffers.keys() - {x.id for x in currentOffers}):
+for offerId in list(database.publishedOffers.keys() - currentOffers.keys()):
 	message = database.getOfferData(offerId)
 	print('Deleting offer %d' % (offerId))
 

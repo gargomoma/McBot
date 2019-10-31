@@ -2,16 +2,13 @@
 chevron==0.13.*
 
 # Fetching remote resources
-requests==2.20.*
+requests==2.22.*
 
 # YAML parsing for configurations
-ruamel.yaml==0.15.*
+ruamel.yaml==0.16.*
 
 # Filtering old/future offers
-python-dateutil==2.7.*
-
-# Keeping offers unique yet sorted by appearance on app
-orderedset==2.0.*
+python-dateutil==2.8.*
 
 # Removing special characters from random emails
-Unidecode==1.0.*
+Unidecode==1.1.*

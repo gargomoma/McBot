@@ -4,9 +4,9 @@ import secrets
 from collections import namedtuple
 from datetime import datetime
 from datetime import timedelta
-from orderedset import OrderedSet
 
-Offer = namedtuple('Offer', ('id', 'name', 'type', 'level', 'big', 'code', 'mcAutoCode', 'price', 'image', 'dateFrom', 'dateTo'))
+Offer = namedtuple('Offer', ('id', 'name', 'type', 'level', 'image', 'dateFrom', 'dateTo', 'normal', 'big'))
+OfferVariant = namedtuple('OfferVariant', ('code', 'mcAutoCode', 'price'))
 UserData = namedtuple('UserData', ('name', 'email', 'password', 'phone', 'birthDate'))
 LoginData = namedtuple('LoginData', ('deviceId', 'email', 'password'))
 
@@ -84,46 +84,44 @@ class SimplifiedOfferFetcher(Fetcher):
 		}
 		return self.session.post(self.endpoint, json=request)
 
-	def _processOffer(self, processed, offer, dateFrom, dateTo):
-		processed.add(Offer(
-				id=offer['id'],
-				name=offer['name'].strip(),
-				type=offer['offerType'],
-				level=offer.get('offerLevel'),
-				big=False,
+	def _processOffer(self, offer, dateFrom, dateTo):
+		normal = OfferVariant(
 				code=offer['qrCode'],
 				mcAutoCode=offer['checkoutCode'],
-				price=float(offer['price']),
-				image=offer['imageDetail'],
-				dateFrom=dateFrom,
-				dateTo=dateTo
-		))
+				price=float(offer['price'])
+		)
 
-		if 'bigQrCode' in offer:
-			processed.add(Offer(
-					id=offer['id'],
-					name=offer['name'].strip(),
-					type=offer['offerType'],
-					level=offer.get('offerLevel'),
-					big=True,
-					code=offer['bigQrCode'],
-					mcAutoCode=offer['bigCheckoutCode'],
-					price=float(offer['bigPrice']),
-					image=offer['imageDetail'],
-					dateFrom=dateFrom,
-					dateTo=dateTo
-			))
+		if offer.get('bigQrCode') != None:
+			big = OfferVariant(
+				code=offer['bigQrCode'],
+				mcAutoCode=offer['bigCheckoutCode'],
+				price=float(offer['bigPrice'])
+			)
+		else:
+			big = None
+
+		return Offer(
+			id=int(offer['id']),
+			name=offer['name'].strip(),
+			type=offer['offerType'],
+			level=offer.get('offerLevel'),
+			image=offer['imageDetail'],
+			dateFrom=dateFrom,
+			dateTo=dateTo,
+			normal=normal,
+			big=big
+		)
 
 class SimplifiedLoyaltyOfferFetcher(SimplifiedOfferFetcher):
 	END_OF_DAY = timedelta(days=1, seconds=-1)
 
 	def _processResponse(self, response):
-		processed = OrderedSet()
+		processed = list()
 
 		for offer in response['offers']:
 			dateFrom = self._parseDate(offer['dateFrom'])
 			dateTo = self._parseDate(offer['dateTo'], True)
-			self._processOffer(processed, offer, dateFrom, dateTo)
+			processed.append(self._processOffer(offer, dateFrom, dateTo))
 
 		return processed
 
@@ -135,13 +133,12 @@ class SimplifiedLoyaltyOfferFetcher(SimplifiedOfferFetcher):
 
 class SimplifiedCalendarOfferFetcher(SimplifiedOfferFetcher):
 	def _processResponse(self, response):
-		processed = OrderedSet()
+		processed = list()
 
 		for promotion in response['offersPromotion']:
 			dateFrom = self._parseTimestamp(promotion['dateFromOffer'])
 			dateTo = self._parseTimestamp(promotion['dateToOffer'])
-
-			self._processOffer(processed, promotion['offer'], dateFrom, dateTo)
+			processed.append(self._processOffer(promotion['offer'], dateFrom, dateTo))
 
 		return processed
 

@@ -6,7 +6,8 @@ from collections import namedtuple
 OfferDiff = namedtuple('OfferDiff', ('new', 'deleted'))
 
 class PublishedMessage:
-	def __init__(self, messageId=None, authKeys=None):
+	def __init__(self, text=None, messageId=None, authKeys=None):
+		self.text = text
 		self.messageId = messageId
 		self.authKeys = authKeys or list()
 
@@ -37,26 +38,21 @@ class Database:
 	def __init__(self):
 		self.publishedOffers = dict()
 
-	def diffOffers(self, current):
-		new = current - self.publishedOffers.keys()
-		deleted = self.publishedOffers.keys() - current
-		return OfferDiff(new, deleted)
+	def putPublishedOffer(self, offerId, data):
+		self.publishedOffers[offerId] = data
 
-	def putPublishedOffer(self, offer, data):
-		self.publishedOffers[offer] = data
+	def getOfferData(self, offerId):
+		return self.publishedOffers[offerId]
 
-	def getOfferData(self, offer):
-		return self.publishedOffers[offer]
-
-	def getOrCreateOffer(self, offer):
-		data = self.publishedOffers.get(offer)
+	def getOrCreateOffer(self, offerId):
+		data = self.publishedOffers.get(offerId)
 		if data is None:
 			data = PublishedMessage()
-			self.publishedOffers[offer] = data
+			self.publishedOffers[offerId] = data
 		return data
 
-	def deletePublishedOffer(self, offer):
-		del self.publishedOffers[offer]
+	def deletePublishedOffer(self, offerId):
+		del self.publishedOffers[offerId]
 
 	def save(self, path):
 		with open(path, 'wb') as f:

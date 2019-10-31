@@ -5,13 +5,15 @@ offer: |
     {{#typeBronze}}🥉{{/typeBronze}}{{#typeSilver}}🥈{{/typeSilver}}{{#typeGold}}🥇{{/typeGold}}{{^typeLoyalty}}🍔{{/typeLoyalty}} *{{name}}*{{#big}} (grande){{/big}}
     {{#typeMcnific}}❗❗ *Mes McNífico* ❗❗
     {{/typeMcnific}}{{#typeGold}}📱 *Sólo disponible desde la app*
-    {{/typeGold}}💶 Precio: *{{price}}€*
-    🚗 Código McAuto: `{{mcAutoCode}}`
-    📅 Del {{fromDay}}/{{fromMonthName}} al {{toDay}}/{{toMonthName}}
+    {{/typeGold}}💶 Precio: *{{price}}€*{{#bigPrice}} (grande: *{{bigPrice}}€*){{/bigPrice}}
+    {{#inTime}}🚗 Código McAuto: `{{mcAuto}}`{{#bigMcAuto}} (grande: *{{bigMcAuto}}€*){{/bigMcAuto}}
+    📅 Hasta el {{toDay}} de {{toMonthName}}{{/inTime}}{{^inTime}}⚠️ A partir del {{fromDay}} de {{fromMonthName}}{{/inTime}}
 
 offerExpired: "Código caducado"
 
-exchangeText: "Canjear código"
+exchange:
+    normal: "{{^bigCode}}Canjear{{/bigCode}}{{#bigCode}}Normal{{/bigCode}}"
+    big: "Grande"
 
 months:
   - enero

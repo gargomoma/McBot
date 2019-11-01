@@ -196,6 +196,7 @@ for offer in currentOffers.values():
 		response = requests.post('https://api.telegram.org/bot%s/sendMessage' % config['bot']['token'], json=data).json()
 		if response['ok']:
 			publishedMessage.messageId = response['result']['message_id']
+			publishedMessage.text = offerText
 		else:
 			publishedMessage.popAuthKey()
 

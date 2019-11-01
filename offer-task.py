@@ -225,7 +225,7 @@ for offerId in list(database.publishedOffers.keys() - currentOffers.keys()):
 		deleted = response['ok'] or response['description'] in ('Bad Request: message is not modified', 'Bad Request: message to edit not found')
 
 	if deleted:
-		database.deletePublishedOffer(offer)
+		database.deletePublishedOffer(offerId)
 
 database.save(config['database'])
 

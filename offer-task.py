@@ -50,7 +50,6 @@ currentOffers = dict(filter(lambda x: 'prueba' not in x[1].name.lower(), current
 if len(currentOffers) < config['minOfferCount']:
 	sys.exit(0)
 
-codeToId = dict()
 offersById = dict()
 for offer in currentOffers.values():
 	publishedMessage = database.getOrCreateOffer(offer.id)
@@ -58,20 +57,22 @@ for offer in currentOffers.values():
 	publishedMessage.addAuthKey(authKey)
 
 	requiresAuth = offer.type == 1 and offer.level == 1
-	offersById[offer.id] = {
+	offerData = {
 		'type': offer.type,
 		'name': offer.name,
 		'image': offer.image,
 		'authKeys': publishedMessage.authKeys,
-		'requiresAuth': requiresAuth
+		'requiresAuth': requiresAuth,
+		'code' : str(offer.normal.code),
 	}
 
-	codeToId[offer.normal.code] = str(offer.id)
 	if offer.big:
-		codeToId[offer.big.code] = str(offer.id)
+		offerData['bigCode'] = str(offer.big.code)
+
+	offersById[offer.id] = offerData
 
 with open(config['offerJson'], 'w') as f:
-	json.dump({'codeToId': codeToId, 'offersById': offersById}, f)
+	json.dump(offersById, f)
 
 isFirstMessage = True
 for offer in currentOffers.values():
@@ -135,7 +136,7 @@ for offer in currentOffers.values():
 			[
 				{
 					'text': chevron.render(strings['exchange']['normal'], chevronTags),
-					'url': config['exchangeUrl'] % {'code': offer.normal.code, 'authKey': publishedMessage.getNewestAuthKey()}
+					'url': config['exchangeUrl'] % {'id': offer.id, 'authKey': publishedMessage.getNewestAuthKey(), 'big': '0'}
 				}
 			]
 		]
@@ -144,7 +145,7 @@ for offer in currentOffers.values():
 			keyboardRows.append([
 				{
 					'text': chevron.render(strings['exchange']['big'], chevronTags),
-					'url': config['exchangeUrl'] % {'code': offer.big.code, 'authKey': publishedMessage.getNewestAuthKey()}
+					'url': config['exchangeUrl'] % {'id': offer.id, 'authKey': publishedMessage.getNewestAuthKey(), 'big': '1'}
 				}
 			])
 

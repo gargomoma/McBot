@@ -9,10 +9,9 @@ require_once('curlclient.php');
 $error = null;
 
 $offerData = json_decode(file_get_contents("codes.json"), true);
-$offerCode = @$_GET['code'];
-$offerId = @$offerData['codeToId'][$offerCode];
-$offer = $offerId ? $offerData['offersById'][$offerId] : null;
+$offerId = @$_GET['id'];
 $authKey = @$_GET['authKey'];
+$offer = @$offerData[$offerId];
 
 $regionOk = false;
 
@@ -26,8 +25,8 @@ if (!$regionOk) {
 }
 
 // Finally, use remote IP matching
-//$ip = $_SERVER['REMOTE_ADDR'];
-$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+$ip = $_SERVER['REMOTE_ADDR'];
+//$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
 
 if (!$regionOk) {
 	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
@@ -76,11 +75,10 @@ if ($offer && !$error) {
 			}
 		}
 
-		/*
 		if (!$error) {
 			$request = array(
 				'idDevice'=> $devinfo['udid'],
-				'idOffer'=> $offerId,
+				'idOffer'=> (int) $offerId,
 				'userLevel'=> $userLevel
 			);
 			$ch = mcd_request("https://mcdonaldsws-app1.mo2o.com/es/v1/notificationsExchangeKiosko", $request);
@@ -89,13 +87,20 @@ if ($offer && !$error) {
 				$reply = json_decode($reply, true);
 				if ($reply['code'] != 100) {
 					$error = 'Error solicitando canjeo: ' . $reply['msg'];
+					echo '<!--'; var_dump($reply); echo '-->';
 				}
 			} else {
 				$error = 'Error de comunicación durante el canjeo';
 			}
 		}
-		*/
+
 		if (!$error) {
+			if (@$_GET['big'] == '1' && @$offer['bigCode']) {
+				$offerCode = $offer['bigCode'];
+			} else {
+				$offerCode = $offer['code'];
+			}
+
 			$request = array(
 				'deviceId' => $devinfo['udid'],
 				'offerId' => $offerId,
@@ -108,6 +113,7 @@ if ($offer && !$error) {
 			$reply = curl_exec($ch);
 			if ($reply) {
 				//echo "<!-- ";
+				//var_dump($request);
 				//var_dump($reply);
 				//echo "-->";
 				$reply = json_decode($reply, true);

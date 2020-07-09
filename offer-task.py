@@ -34,16 +34,15 @@ now = datetime.now(dateutil.tz.gettz(config['time']['timezone'])).replace(tzinfo
 print('Fetching loyalty offers')
 currentOffers = SimplifiedLoyaltyOfferFetcher(config['endpoints']['loyaltyOffers'], proxy=config.get('proxy'), cert=config.get('cert')).fetch()
 
-for endpoint in ('dailyOffer', 'calendarOffers'):
-	print('Fetching %s' % endpoint)
-	try:
-		calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints'][endpoint], config.get('proxy'), cert=config.get('cert')).fetch()
-		calendarOffers = filter(lambda x: x[1].dateTo >= now, calendarOffers.items())
+print('Fetching daily offers')
+try:
+	calendarOffers = SimplifiedCalendarOfferFetcher(config['endpoints']['dailyOffer'], config.get('proxy'), cert=config.get('cert')).fetch()
+	calendarOffers = filter(lambda x: x[1].dateTo >= now, calendarOffers.items())
 
-		currentOffers.update(calendarOffers)
-	except ApiErrorException as e:
-		if e.errorMessage != "KO (message was: Daily offer not found)":
-			raise e
+	currentOffers.update(calendarOffers)
+except ApiErrorException as e:
+	if e.errorMessage != "KO (message was: Daily offer not found)":
+		raise e
 
 currentOffers = dict(filter(lambda x: 'prueba' not in x[1].name.lower(), currentOffers.items()))
 

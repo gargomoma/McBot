@@ -178,7 +178,7 @@ for offer in currentOffers.values():
 			publishedMessage.text = offerText
 
 		else:
-			if response['description'] == 'Bad Request: message to edit not found':
+			if response['error_code'] == 400:
 				publishedMessage.messageId = None
 			else:
 				publishedMessage.popAuthKey()

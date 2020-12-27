@@ -20,14 +20,20 @@ $uaLangs = language_header_parse();
 $regionOk = count(array_intersect($uaLangs, array('es-es', 'ca', 'ca-es', 'gl', 'gl-es', 'eu', 'eu-es'))) > 0;
 
 // Try matching CloudFlare
+$cfCountry = @$_SERVER['HTTP_CF_IPCOUNTRY'];
 if (!$regionOk) {
-	$regionOk = (@$_SERVER['HTTP_CF_IPCOUNTRY'] == 'ES');
+	$regionOk = ($cfCountry == 'ES');
 }
+
+$regionOk = false;
 
 // Finally, use remote IP matching
 $ip = $_SERVER['REMOTE_ADDR'];
-//$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+if (substr($ip, 0, 7) == '::ffff:') {
+	$ip = substr($ip, 7);
+}
 
+$ipLocation = "";
 if (!$regionOk) {
 	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
 		$ipLocationDb = new IP2Location\Database('ip2location/IP2LOCATION-LITE-DB1.IPV6.BIN');
@@ -40,7 +46,7 @@ if (!$regionOk) {
 }
 
 if (!$regionOk) {
-	$error = 'Estos códigos son únicamente válidos para McDonalds España.';
+	$error = 'Estos códigos son únicamente válidos para McDonalds España. (region local: ' . $ipLocation .', CF: ' . $cfCountry . ', IP ' . $ip . ')';
 }
 
 require('security.php');
